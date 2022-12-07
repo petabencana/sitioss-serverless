@@ -281,6 +281,7 @@ async function createReport(config, db, card, req, res) {
 function invokeNotify(config, body) {
 	return new Promise((resolve, reject) => {
 		body.card.userId = body.card.username
+		body.card.deployment = 'ph'
 		delete body.card.username
 		const endpoint = config.NOTIFY_ENDPOINT + body.card.network + '/send/'
 		const eventPayload = {
