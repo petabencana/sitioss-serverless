@@ -18,17 +18,20 @@ const archive = (config, db) => ({
       // Setup query
       let query = `SELECT pkey, created_at, source,
       status, url, image_url, disaster_type, report_data, tags, title, text,
-      the_geom FROM ${config.TABLE_REPORTS}
+      ST_AsBinary(the_geom) , ${config.TABLE_COGNICITY_PARTNERS}.partner_code ,${config.TABLE_COGNICITY_PARTNERS}.partner_icon FROM ${config.TABLE_REPORTS}
+      LEFT JOIN ${config.TABLE_COGNICITY_PARTNERS} ON ${config.TABLE_REPORTS}.partner_code=${config.TABLE_COGNICITY_PARTNERS}.partner_code
       WHERE created_at >= $1::timestamp with time zone
       AND created_at <= $2::timestamp with time zone
-      AND ($3 IS NULL OR tags->>'instance_region_code'=$3)
+      AND ($3::text IS NULL OR tags->>'instance_region_code'=$3::text)
       ORDER BY created_at DESC LIMIT $4`;
+      let apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null;
+      let adminType = admin ? admin : null;
 
       // var timeWindow = (Date.now() / 1000) - timeperiod;
       // Execute
       db.query(query, {
         type: QueryTypes.SELECT,
-        bind: [start, end, admin, config.API_REPORTS_LIMIT],
+        bind: [start, end, adminType, apiLimit],
       })
         .then((data) => {
           resolve(data);
