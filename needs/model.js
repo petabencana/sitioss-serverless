@@ -36,7 +36,7 @@ const needs = (config, db) => ({
 	getByNeedId: (value) =>
 		new Promise((resolve, reject) => {
 			// Setup query
-			let query = `SELECT id, status , need_user_id , quantity_requested , item_requested , quantity_satisfied , giver_user_id , promised_date , promised_time , created_date , language
+			let query = `SELECT id, status , need_user_id , quantity_requested , item_requested , quantity_satisfied , giver_user_id , promised_date , promised_time , created_date , need_language , giver_language
       					 FROM ${config.TABLE_LOGISTICS_NEEDS} WHERE id = $1`
 
 			// Execute
@@ -64,14 +64,25 @@ const needs = (config, db) => ({
 			const giver_user_id = body?.giver_user_id || null
 			const promised_date = body?.promised_date || null
 			const promised_time = body?.promised_time || null
+			const giver_language = body?.giver_language || null
 			// Setup query
-			let query = `UPDATE  ${config.TABLE_LOGISTICS_NEEDS} SET  status = COALESCE($1,status) , need_user_id = COALESCE($2,need_user_id) , quantity_requested = COALESCE($3,quantity_requested) , item_requested = COALESCE($4,item_requested) , quantity_satisfied = COALESCE($5,quantity_satisfied) , giver_user_id = COALESCE($6,giver_user_id) , promised_date = COALESCE($7,promised_date) , promised_time = COALESCE($8,promised_time)
+			let query = `UPDATE  ${config.TABLE_LOGISTICS_NEEDS} SET  status = COALESCE($1,status) , need_user_id = COALESCE($2,need_user_id) , quantity_requested = COALESCE($3,quantity_requested) , item_requested = COALESCE($4,item_requested) , quantity_satisfied = COALESCE($5,quantity_satisfied) , giver_user_id = COALESCE($6,giver_user_id) , promised_date = COALESCE($7,promised_date) , promised_time = COALESCE($8,promised_time) , giver_language = COALESCE($9,giver_language) ,
       					 WHERE id = ${value.id}`
 
 			// Execute
 			db.query(query, {
 				type: QueryTypes.UPDATE,
-				bind: [status, need_user_id, quantity_requested, item_requested, quantity_satisfied, giver_user_id, promised_date, promised_time],
+				bind: [
+					status,
+					need_user_id,
+					quantity_requested,
+					item_requested,
+					quantity_satisfied,
+					giver_user_id,
+					promised_date,
+					promised_time,
+					giver_language
+				],
 			})
 				.then((data) => {
 					resolve(data)
@@ -86,7 +97,7 @@ const needs = (config, db) => ({
 	addNewNeedReport: (body) => {
 		return new Promise((resolve, reject) => {
 			let query = `
-          INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} (status , need_user_id , quantity_requested , quantity_satisfied , giver_user_id , promised_date , item_requested , language ,  the_geom)
+          INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} (status , need_user_id , quantity_requested , quantity_satisfied , giver_user_id , promised_date , item_requested , need_language ,  the_geom)
           VALUES (COALESCE($1,null) , COALESCE($2,null) , COALESCE($3,null) , COALESCE($4,null) , COALESCE($5, null) , COALESCE($6, null) ,  COALESCE($7, null) , COALESCE($8, null) , ST_SetSRID(ST_Point($9,$10),4326));
         `
 			// Execute
@@ -100,13 +111,13 @@ const needs = (config, db) => ({
 					body?.giver_user_id || null,
 					body?.promised_date || null,
 					body?.item_requested || null,
-					body?.language || null,
+					body?.need_language || null,
 					body?.lng || null,
 					body?.lat || null,
 				],
 			})
 				.then((data) => {
-					console.log("🚀 ~ file: model.js:107 ~ .then ~ data:", data)
+					console.log('🚀 ~ file: model.js:107 ~ .then ~ data:', data)
 					resolve(data)
 				})
 				/* istanbul ignore next */
