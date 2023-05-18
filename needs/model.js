@@ -66,8 +66,7 @@ const needs = (config, db) => ({
 			const promised_time = body?.promised_time || null
 			const giver_language = body?.giver_language || null
 			// Setup query
-			let query = `UPDATE  ${config.TABLE_LOGISTICS_NEEDS} SET  status = COALESCE($1,status) , need_user_id = COALESCE($2,need_user_id) , quantity_requested = COALESCE($3,quantity_requested) , item_requested = COALESCE($4,item_requested) , quantity_satisfied = COALESCE($5,quantity_satisfied) , giver_user_id = COALESCE($6,giver_user_id) , promised_date = COALESCE($7,promised_date) , promised_time = COALESCE($8,promised_time) , giver_language = COALESCE($9,giver_language) ,
-      					 WHERE id = ${value.id}`
+			let query = `UPDATE  ${config.TABLE_LOGISTICS_NEEDS} SET  status = COALESCE($1,status) , need_user_id = COALESCE($2,need_user_id) , quantity_requested = COALESCE($3,quantity_requested) , item_requested = COALESCE($4,item_requested) , quantity_satisfied = COALESCE($5,quantity_satisfied) , giver_user_id = COALESCE($6,giver_user_id) , promised_date = COALESCE($7,promised_date) , promised_time = COALESCE($8,promised_time) , giver_language = COALESCE($9,giver_language) WHERE id = ${value.id}`
 
 			// Execute
 			db.query(query, {
@@ -81,7 +80,7 @@ const needs = (config, db) => ({
 					giver_user_id,
 					promised_date,
 					promised_time,
-					giver_language
+					giver_language,
 				],
 			})
 				.then((data) => {
