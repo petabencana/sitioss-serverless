@@ -139,8 +139,8 @@ app.get("reports/archive", async (req, res, next) => {
     return;
   }
   return archives(config, db)
-    .all(req.query.start, req.query.end, req.query.admin)
-    .then((data) => handleGeoResponse(data, req, res, next))
+    .all(req.query.start, req.query.end, req.query.admin , req.query.disaster)
+    .then((data) => handleGeoCapResponse(data, req, res, cap))
     .catch((err) => {
       console.log("🚀 ~ file: index.js ~ line 46 ~ app.get ~ err", err);
       return res.status(400).json({

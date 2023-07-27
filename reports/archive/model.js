@@ -13,7 +13,7 @@ const { QueryTypes } = require("@sequelize/core");
  */
 
 const archive = (config, db) => ({
-  all: (start, end, admin) =>
+  all: (start, end, admin , disasterType) =>
     new Promise((resolve, reject) => {
       // Setup query
       let query = `SELECT pkey, created_at, source,
@@ -23,7 +23,8 @@ const archive = (config, db) => ({
       WHERE created_at >= $1::timestamp with time zone
       AND created_at <= $2::timestamp with time zone
       AND ($3::text IS NULL OR tags->>'instance_region_code'=$3::text)
-      ORDER BY created_at DESC LIMIT $4`;
+      AND ($4::text is NULL OR disaster_type=$4::text)
+      ORDER BY created_at DESC LIMIT $5`;
       let apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null;
       let adminType = admin ? admin : null;
 
@@ -31,7 +32,7 @@ const archive = (config, db) => ({
       // Execute
       db.query(query, {
         type: QueryTypes.SELECT,
-        bind: [start, end, adminType, apiLimit],
+        bind: [start, end, adminType, disasterType , apiLimit],
       })
         .then((data) => {
           resolve(data);

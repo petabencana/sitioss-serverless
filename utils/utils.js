@@ -31,13 +31,12 @@ dbgeo.defaults = {
 
 // Format the geographic response with the required geo format
 const formatGeo = (body, outputFormat) => {
-  let dbgeoOutputFormat = outputFormat || config.GEO_FORMAT_DEFAULT;
   return new Promise((resolve, reject) => {
     // Check that body is an array, required by dbgeo.parse
     if (Object.prototype.toString.call(body) !== "[object Array]") {
       body = [body]; // Force to array
     }
-    dbgeo.parse(body, { dbgeoOutputFormat }, (err, formatted) => {
+    dbgeo.parse(body, { outputFormat }, (err, formatted) => {
       if (err) {
         console.log("🚀 ~ file: utils.js ~ line 40 ~ dbgeo.parse ~ err", err);
         reject(err);
@@ -78,12 +77,7 @@ const handleGeoCapResponse = (data, req, res, cap, next) => {
     : req.query.geoformat === "cap"
     ? // If CAP format has been required convert to geojson then to CAP
       formatGeo(data, "geojson")
-        .then((formatted) => {
-          return res.json({
-            statusCode: 200,
-            result: cap.geoJsonToReportAtomCap(formatted.features),
-          });
-        })
+      .then((formatted) => res.header('Content-Type', 'text/xml').send(cap.geoJsonToReportAtomCap(formatted.features)))
 
         /* istanbul ignore next */
         .catch((err) =>

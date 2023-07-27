@@ -68,7 +68,8 @@ const config = {
   TABLE_EARTHQUAKE_REPORTS: process.env.TABLE_EARTHQUAKE_REPORTS || 'earthquake.earthquakes_reports',
   TABLE_VOLCANO_LIST_REPORTS : process.env.TABLE_VOLCANO_LIST_REPORTS || 'volcano.list_volcano',
   TABLE_VOLCANO_LAST_ERUPTION_REPORTS : process.env.TABLE_VOLCANO_LAST_ERUPTION_REPORTS || 'volcano.lastest_eruption',
-  TABLE_LOGISTICS_NEEDS : process.env.TABLE_LOGISTICS_NEEDS || 'logistics.need_reports'
+  TABLE_LOGISTICS_NEEDS : process.env.TABLE_LOGISTICS_NEEDS || 'logistics.need_reports',
+  TABLE_LOGISTICS_GIVER_DETAILS : process.env.TABLE_LOGISTICS_GIVER_DETAILS || 'logistics.giver_details'
 };
 
 module.exports = config;
