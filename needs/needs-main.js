@@ -75,6 +75,20 @@ app.post(
       })
 );
 
+app.post(
+  "needs/update-giver",
+  (req, res) =>
+    needs(config, db)
+      .addGiverReport(req.body)
+      .then((data) => res.status(200).json({ 'message': 'Giver details updated successfully'}))
+      .catch((err) => {
+        console.log("🚀 ~ file: index.js ~ line 29 ~ err", err);
+        return res.status(400).json({ message: "Could not process request" });
+        /* istanbul ignore next */
+      })
+);
+
+
 //----------------------------------------------------------------------------//
 // Main router handler
 //----------------------------------------------------------------------------//
