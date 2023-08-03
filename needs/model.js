@@ -16,7 +16,7 @@ const needs = (config, db) => ({
 	all: () =>
 		new Promise((resolve, reject) => {
 			// Setup query
-			let query = `SELECT ${config.TABLE_LOGISTICS_NEEDS}.id, ${config.TABLE_LOGISTICS_NEEDS}.need_user_id , ${config.TABLE_LOGISTICS_NEEDS}.status , ${config.TABLE_LOGISTICS_NEEDS}.quantity_requested , ${config.TABLE_LOGISTICS_NEEDS}.item_requested , 
+			let query = `SELECT ${config.TABLE_LOGISTICS_NEEDS}.id, ${config.TABLE_LOGISTICS_NEEDS}.created_date ,  ${config.TABLE_LOGISTICS_NEEDS}.need_user_id , ${config.TABLE_LOGISTICS_NEEDS}.status , ${config.TABLE_LOGISTICS_NEEDS}.quantity_requested , ${config.TABLE_LOGISTICS_NEEDS}.item_requested , 
 			${config.TABLE_LOGISTICS_GIVER_DETAILS}.quantity_satisfied, ${config.TABLE_LOGISTICS_GIVER_DETAILS}.promised_date , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.promised_time , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.giver_id , ST_AsBinary(${config.TABLE_LOGISTICS_NEEDS}.the_geom)
 			FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} RIGHT JOIN  ${config.TABLE_LOGISTICS_NEEDS} ON ${config.TABLE_LOGISTICS_NEEDS}.id=${config.TABLE_LOGISTICS_GIVER_DETAILS}.need_id;`
 
