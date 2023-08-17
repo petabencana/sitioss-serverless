@@ -35,7 +35,7 @@ app.use((req, res, next) => {
 
 app.get("reports", cacheResponse("1 minute"), (req, res) =>
   reports(config, db)
-    .all(req.query.timeperiod, req.query.admin, req.query.disaster)
+    .all(req.query.timeperiod, req.query.admin, req.query.disaster , req.query.training)
     .then((data) => {
       // Sentry.setTag("invocation-source", "website");
       // console.log("🚀 ~ file: reports-main.js ~ line 32 ~ .then ~ data", data);

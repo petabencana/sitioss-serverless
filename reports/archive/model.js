@@ -17,13 +17,14 @@ const archive = (config, db) => ({
     new Promise((resolve, reject) => {
       // Setup query
       let query = `SELECT pkey, created_at, source,
-      status, url, image_url, disaster_type, report_data, tags, title, text,
+      status, url, image_url, disaster_type,is_training, report_data, tags, title, text,
       ST_AsBinary(the_geom) , ${config.TABLE_COGNICITY_PARTNERS}.partner_code ,${config.TABLE_COGNICITY_PARTNERS}.partner_icon FROM ${config.TABLE_REPORTS}
       LEFT JOIN ${config.TABLE_COGNICITY_PARTNERS} ON ${config.TABLE_REPORTS}.partner_code=${config.TABLE_COGNICITY_PARTNERS}.partner_code
       WHERE created_at >= $1::timestamp with time zone
       AND created_at <= $2::timestamp with time zone
       AND ($3::text IS NULL OR tags->>'instance_region_code'=$3::text)
       AND ($4::text is NULL OR disaster_type=$4::text)
+      AND (is_training is NULL OR is_training=false)
       ORDER BY created_at DESC LIMIT $5`;
       let apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null;
       let adminType = admin ? admin : null;

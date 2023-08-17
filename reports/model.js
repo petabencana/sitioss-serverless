@@ -12,11 +12,11 @@
  */
 const { QueryTypes } = require("@sequelize/core");
 const reports = (config, db) => ({
-  all: (timeperiod, admin, disasterType) =>
+  all: (timeperiod, admin, disasterType , training) =>
     new Promise((resolve, reject) => {
       // Setup query
       let query = `SELECT pkey, created_at, source,
-      status, url, image_url, disaster_type, report_data, tags, title, text,
+      status, url, image_url, disaster_type, is_training, report_data, tags, title, text,
       ST_AsBinary(the_geom), ${config.TABLE_COGNICITY_PARTNERS}.partner_code ,${config.TABLE_COGNICITY_PARTNERS}.partner_icon FROM ${config.TABLE_REPORTS}
       LEFT JOIN ${config.TABLE_COGNICITY_PARTNERS} ON ${config.TABLE_REPORTS}.partner_code=${config.TABLE_COGNICITY_PARTNERS}.partner_code
       WHERE ((disaster_type = 'flood' AND created_at >= to_timestamp($1)) 
@@ -27,6 +27,7 @@ const reports = (config, db) => ({
       OR (disaster_type = 'fire' AND created_at >= to_timestamp($6)) )
       AND ($7::text IS NULL OR tags->>'instance_region_code'=$7::text)
       AND ($9::text is NULL OR disaster_type=$9::text)
+      AND ($10::boolean is NULL OR is_training=$10::boolean)
       ORDER BY created_at DESC LIMIT $8`;
 
       let floodTimeWindow =
@@ -50,6 +51,7 @@ const reports = (config, db) => ({
       let adminType = admin ? admin : null;
       let disaster = disasterType ? disasterType : null;
       let apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null;
+      let isTraining = training?.toString() ? training : null
       // Execute
       db.query(query, {
         type: QueryTypes.SELECT,
@@ -63,6 +65,7 @@ const reports = (config, db) => ({
           adminType,
           apiLimit,
           disaster,
+          isTraining
         ],
       })
         .then((data) => {
@@ -82,7 +85,7 @@ const reports = (config, db) => ({
     new Promise((resolve, reject) => {
       // Setup query
       let query = `SELECT pkey, created_at, source,
-      status, url, image_url, disaster_type, report_data, tags, title, text,
+      status, url, image_url, disaster_type, is_training, report_data, tags, title, text,
       the_geom FROM ${config.TABLE_REPORTS}
       WHERE pkey = ?`;
 
