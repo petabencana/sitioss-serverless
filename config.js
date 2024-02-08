@@ -70,6 +70,8 @@ const config = {
   TABLE_VOLCANO_LIST_REPORTS : process.env.TABLE_VOLCANO_LIST_REPORTS || 'volcano.list_volcano',
   TABLE_VOLCANO_LAST_ERUPTION_REPORTS : process.env.TABLE_VOLCANO_LAST_ERUPTION_REPORTS || 'volcano.lastest_eruption',
   TABLE_SUBSCRIPTIONS : process.env.TABLE_SUBSCRIPTIONS || 'subscriptions.subscriptions_table',
+  TABLE_SUBSCRIPTIONS_REGIONS : process.env.TABLE_SUBSCRIPTIONS_REGIONS || 'subscriptions.region_details',
+  TABLE_SUBSCRIPTIONS_LOG : process.env.TABLE_SUBSCRIPTIONS_LOG || 'subscriptions.log',
   TABLE_REGIONS : process.env.TABLE_REGIONS || 'cognicity.local_cities'
 };
 

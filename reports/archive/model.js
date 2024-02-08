@@ -13,7 +13,7 @@ const { QueryTypes } = require("@sequelize/core");
  */
 
 const archive = (config, db) => ({
-  all: (start, end, admin , disasterType) =>
+  all: (start, end, admin , disasterType , training) =>
     new Promise((resolve, reject) => {
       // Setup query
       let query = `SELECT pkey, created_at, source,
@@ -24,20 +24,22 @@ const archive = (config, db) => ({
       AND created_at <= $2::timestamp with time zone
       AND ($3::text IS NULL OR tags->>'instance_region_code'=$3::text)
       AND ($4::text is NULL OR disaster_type=$4::text)
-      AND (is_training is NULL OR is_training=false)
-      ORDER BY created_at DESC LIMIT $5`;
+      AND ($5::boolean is NULL OR is_training=$5::boolean)
+      ORDER BY created_at DESC LIMIT $6`;
       let apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null;
       let adminType = admin ? admin : null;
       let disaster = disasterType ? disasterType : null;
+      let isTraining = training?.toString() ? training : null
 
 
       // var timeWindow = (Date.now() / 1000) - timeperiod;
       // Execute
       db.query(query, {
         type: QueryTypes.SELECT,
-        bind: [start, end, adminType, disaster , apiLimit],
+        bind: [start, end, adminType, disaster , isTraining , apiLimit],
       })
         .then((data) => {
+          console.log("archives Reports model" , data)
           resolve(data);
         })
         /* istanbul ignore next */

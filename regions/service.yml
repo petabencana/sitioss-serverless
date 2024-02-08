@@ -10,11 +10,11 @@ package:
 
 
 functions:
-  cities:
+  regions:
     handler: regions/regions-main.main
-    # name: ${self:service}-${opt:stage}
+    name: ${self:service}-${opt:stage}
     # Comment out the below line incase of running it in local
-    # environment: ${file(./${opt:stage}.env.yml):env}
+    environment: ${file(./${opt:stage}.env.yml):env}
     vpc:
       securityGroupIds:
         - sg-019747b737ec5814c

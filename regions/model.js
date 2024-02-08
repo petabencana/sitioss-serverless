@@ -56,6 +56,27 @@ const regions = (config, db) => ({
           reject(err);
         });
     }),
+
+    byRegionCode: (regionCode) =>
+    new Promise((resolve, reject) => {
+      // Setup query
+      let query = `SELECT id , region, region_code, city
+      FROM ${config.TABLE_REGIONS} WHERE region_code=$1`;
+
+      // Execute
+      db.query(query, {
+        type: QueryTypes.SELECT,
+        bind: [regionCode],
+      })
+        .then((data) => {
+          resolve(data);
+        })
+        /* istanbul ignore next */
+        .catch((err) => {
+          /* istanbul ignore next */
+          reject(err);
+        });
+    }),
 });
 
 module.exports = regions;

@@ -1,6 +1,9 @@
 package:
-  patterns:
-    - "!**/*"
+  # exclude all folders and files
+  exclude:
+    - "**/*"
+  # include all that is relevant to the service
+  include:
     - node_modules/**
     - utils/**
     - reports/**

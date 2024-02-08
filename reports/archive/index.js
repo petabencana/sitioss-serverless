@@ -40,7 +40,7 @@ app.get("archive", cacheResponse("1 minute"), (req, res) => {
     return;
   }
   return archives(config, db)
-    .all(req.query.start, req.query.end, req.query.admin)
+    .all(req.query.start, req.query.end, req.query.admin ,  req.query.disaster ,  req.query.training)
     .then((data) => handleGeoResponse(data, req, res, next))
     .catch((err) => {
       return res.status(400).json({

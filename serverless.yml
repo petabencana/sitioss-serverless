@@ -1,8 +1,10 @@
+org: cdltech
+app: cognicity-reports-sls
 #  These configs are stage specific configs. Loaded in deploy time using --stage command.
 # Name your config yml files as STAGE_NAME.env.yml for clarity
 useDotenv: true
 
-# # Plugin for running the offtine version for testing
+# # Plugin for running the offline version for testing
 plugins:
   - serverless-domain-manager
   - serverless-offline
@@ -20,6 +22,7 @@ service: cognicity-${env:SERVICE}-sls
 
 provider:
   name: aws
+  runtime: nodejs16.x
   region: ap-southeast-1
   logs:
     restApi:

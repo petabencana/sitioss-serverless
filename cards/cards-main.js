@@ -4,11 +4,12 @@
  * @module cards/cards-main
  **/
 const cards = require("./model");
+const subscriptions = require("../subscriptions/model");
 const config = require("../config");
 const db = require("../utils/db");
 const app = require("lambda-api")();
 const AWS = require("aws-sdk");
-const { handleResponse } = require("../utils/utils");
+const { handleResponse, filterReports, getDisasterSeverity } = require("../utils/utils");
 
 AWS.config.region = config.AWS_REGION;
 let lambda = new AWS.Lambda();
@@ -234,6 +235,118 @@ app.patch("cards/:cardId", (req, res) => {
     }
 });
 
+function getSubscriptions(config, db) {
+    try {
+        return new Promise((resolve, reject) => {
+            return subscriptions(config, db)
+                .fetchSubscriptions()
+                .then(data => resolve(data))
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    } catch (err) {
+        reject(err);
+    }
+}
+
+function addSubscriptionLog(config, db, subscription, region) {
+    return new Promise((resolve, reject) => {
+        return subscriptions(config, db)
+            .addSubscriptionLog(subscription, region)
+            .then(data => resolve(data))
+            .catch(err => reject(err));
+    });
+}
+
+function getSubscriptionLog(config, db, userId, region) {
+    try {
+        return new Promise((resolve, reject) => {
+            return subscriptions(config, db)
+                .getSubscriptionLog(userId, region)
+                .then(data => resolve(data))
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    } catch (err) {
+        reject(err);
+    }
+}
+
+function isCityInRegionCodes(reportArray, targetCity) {
+    for (const report of reportArray) {
+        if (report.city === targetCity && report.count >= 3) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function canTriggerNotification(config, db, data) {
+    try {
+        const instanceRegionCode = data.instanceRegionCode;
+        const reportId = data.reportId;
+        return new Promise((resolve, reject) => {
+            return cards(config, db)
+                .reports()
+                .then(async reportData => {
+                    // Filter reports based on region code
+                    const transformedReportCounts = filterReports(reportData);
+                    const subscriptionData = await getSubscriptions(config, db);
+                    const filteredSubscriptionData = subscriptionData.filter(entry =>
+                        entry.regionCodes.some(code => transformedReportCounts.some(item => item.city === code && item.count >= 3))
+                    );
+
+                    if (filteredSubscriptionData.length !== 0) {
+                        filteredSubscriptionData.forEach(async subscription => {
+                            subscription.regionCodes.forEach(async regionCode => {
+                                const subscriptionLogData = await getSubscriptionLog(config, db, subscription?.userId, regionCode);
+                                let body = { card: {} };
+                                body.card.city = regionCode;
+                                body.card.notifyType = "location-based";
+                                body.card.username = subscription?.userId;
+                                body.card.language = subscription?.languageCode;
+                                body.card.reports = transformedReportCounts;
+                                body.card.network = "whatsapp";
+                                body.instanceRegionCode = instanceRegionCode;
+                                body.reportId = reportId;
+
+                                // Send report only for the city for which the report is created on the map and not for all the regions subscribed
+                                const matchingCity = isCityInRegionCodes(transformedReportCounts, regionCode);
+
+                                if (subscriptionLogData.length === 0 && matchingCity) {
+                                    await invokeNotify(config, body)
+                                        .then(async () => {
+                                            try {
+                                                const res = await addSubscriptionLog(config, db, subscription, regionCode);
+                                                resolve(res);
+                                            } catch (error) {
+                                                return reject(error);
+                                            }
+                                        })
+                                        .catch(err => {
+                                            resolve(data);
+                                        });
+                                }
+                            });
+                        });
+                    } else {
+                        console.log("filteredSubscriptionData is empty");
+                        resolve("continue");
+                    }
+                })
+                .catch(err => {
+                    console.log("Error while fetching response", err);
+                    reject(err);
+                });
+        });
+    } catch (err) {
+        console.log("Error in trigger notification", err);
+        reject(err);
+    }
+}
+
 async function createReport(config, db, card, req, res) {
     {
         return cards(config, db)
@@ -244,22 +357,49 @@ async function createReport(config, db, card, req, res) {
                 if (data.card.network !== "website") {
                     return invokeNotify(config, data)
                         .then(() => {
-                            return res.status(200).json({
-                                cardId: req.params.cardId,
-                                created: true
-                            });
+                            return canTriggerNotification(config, db, data)
+                                .then(() => {
+                                    return res.status(200).json({
+                                        cardId: req.params.cardId,
+                                        created: true
+                                    });
+                                })
+                                .catch(err => {
+                                    return res.status(200).json({
+                                        cardId: req.params.cardId,
+                                        created: true
+                                    });
+                                });
                         })
                         .catch(err => {
-                            return res.status(200).json({
-                                cardId: req.params.cardId,
-                                created: true
-                            });
+                            return canTriggerNotification(config, db, data)
+                                .then(() => {
+                                    return res.status(200).json({
+                                        cardId: req.params.cardId,
+                                        created: true
+                                    });
+                                })
+                                .catch(err => {
+                                    return res.status(200).json({
+                                        cardId: req.params.cardId,
+                                        created: true
+                                    });
+                                });
                         });
                 }
-                return res.status(200).json({
-                    cardId: req.params.cardId,
-                    created: true
-                });
+                return canTriggerNotification(config, db, data)
+                    .then(() => {
+                        return res.status(200).json({
+                            cardId: req.params.cardId,
+                            created: true
+                        });
+                    })
+                    .catch(err => {
+                        return res.status(200).json({
+                            cardId: req.params.cardId,
+                            created: true
+                        });
+                    });
             })
             .catch(err => {
                 console.log("🚀 ~ file: cards-main.js ~ line 176 ~ createReport ~ err", err);
@@ -277,9 +417,9 @@ async function createReport(config, db, card, req, res) {
 function invokeNotify(config, body) {
     try {
         return new Promise((resolve, reject) => {
-            body.card.userId = body.card.username;
+            body.card.userId = body?.card?.username;
             body.card.deployment = config.DEPLOYMENT;
-            delete body.card.username;
+            delete body?.card?.username;
             const endpoint = config.NOTIFY_ENDPOINT + body.card.network + "/send/";
             const eventPayload = {
                 body: body,
@@ -290,14 +430,19 @@ function invokeNotify(config, body) {
                 InvocationType: "Event",
                 Payload: JSON.stringify(eventPayload)
             };
-            lambda.invoke(params, function (err, data) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve("Lambda invoked");
-                    console.log("Lambda invoked");
-                }
-            });
+            try {
+                lambda.invoke(params, function (err, data) {
+                    if (err) {
+                        console.log("Err", err);
+                        reject(err);
+                    } else {
+                        resolve("Lambda invoked");
+                        console.log("Lambda invoked");
+                    }
+                });
+            } catch (err) {
+                console.log("error: ", err);
+            }
         });
     } catch (err) {
         console.log("Error invoking lambda", err);
