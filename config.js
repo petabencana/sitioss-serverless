@@ -72,7 +72,9 @@ const config = {
   TABLE_SUBSCRIPTIONS : process.env.TABLE_SUBSCRIPTIONS || 'subscriptions.subscriptions_table',
   TABLE_SUBSCRIPTIONS_REGIONS : process.env.TABLE_SUBSCRIPTIONS_REGIONS || 'subscriptions.region_details',
   TABLE_SUBSCRIPTIONS_LOG : process.env.TABLE_SUBSCRIPTIONS_LOG || 'subscriptions.log',
-  TABLE_REGIONS : process.env.TABLE_REGIONS || 'cognicity.local_cities'
+  TABLE_REGIONS : process.env.TABLE_REGIONS || 'cognicity.local_cities',
+  TABLE_LOGISTICS_NEEDS : process.env.TABLE_LOGISTICS_NEEDS || 'logistics.need_reports',
+  TABLE_LOGISTICS_GIVER_DETAILS : process.env.TABLE_LOGISTICS_GIVER_DETAILS || 'logistics.giver_details'
 };
 
 module.exports = config;
