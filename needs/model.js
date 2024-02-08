@@ -1,5 +1,5 @@
 /**
- * CogniCity Server /needs data model
+ * CogniCity Server /infrastructure data model
  * @module src/api/needs/model
  **/
 const { QueryTypes } = require('@sequelize/core')

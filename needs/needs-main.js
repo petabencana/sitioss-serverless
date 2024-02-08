@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Get a list of infrastructure by type for a given admin boundary
+// Get a list of all needs in geo response
 app.get(
   "needs/",
   (req, res) =>
