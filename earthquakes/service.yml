@@ -1,33 +1,32 @@
 package:
-  # exclude all folders and files
-  exclude:
-    - "**/*"
-  # include all that is relevant to the service
-  include:
-    - node_modules/**
-    - utils/**
-    - earthquakes/**
-
+    # exclude all folders and files
+    exclude:
+        - '**/*'
+    # include all that is relevant to the service
+    include:
+        - node_modules/**
+        - utils/**
+        - earthquakes/**
 
 functions:
-  floodgauges:
-    handler: earthquakes/earthquake-main.main
-    name: ${self:service}-${opt:stage}
-    ##Comment out the below line incase of running it in local
-    environment: ${file(./${opt:stage}.env.yml):env}
-    vpc:
-      securityGroupIds:
-        - sg-019747b737ec5814c
-        - sg-09211b5217c513835
-        - sg-0ca0abab2925a7360
-      subnetIds:
-        - subnet-0dd88600a96643d90
-        - subnet-01e81f9673f37b27e
-        - subnet-074efe765dfbeeaf1
-    events:
-      # implementing GET requests to the end points /data of second service.
-      # note that we do not have base path PATH2 here since it is not requires as we
-      # are already in service of PATH2
-      - http:
-          path: "{proxy+}"
-          method: any
+    floodgauges:
+        handler: earthquakes/earthquake-main.main
+        name: ${self:service}-${opt:stage}
+        ##Comment out the below line incase of running it in local
+        environment: ${file(./${opt:stage}.env.yml):env}
+        vpc:
+            securityGroupIds:
+                - sg-019747b737ec5814c
+                - sg-09211b5217c513835
+                - sg-0ca0abab2925a7360
+            subnetIds:
+                - subnet-0dd88600a96643d90
+                - subnet-01e81f9673f37b27e
+                - subnet-074efe765dfbeeaf1
+        events:
+            # implementing GET requests to the end points /data of second service.
+            # note that we do not have base path PATH2 here since it is not requires as we
+            # are already in service of PATH2
+            - http:
+                  path: '{proxy+}'
+                  method: any

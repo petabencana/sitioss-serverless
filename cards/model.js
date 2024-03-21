@@ -2,7 +2,7 @@
  * CogniCity Server /feeds data model
  * @module cards/model
  **/
-const { QueryTypes } = require("@sequelize/core");
+const { QueryTypes } = require('@sequelize/core')
 
 /**
  * Methods to interact with feeds layers in database
@@ -14,43 +14,49 @@ const { QueryTypes } = require("@sequelize/core");
  */
 const cards = (config, db) => ({
     // Add a new partner
-    create: body =>
+    create: (body) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let network_data = body.network_data || "{}";
+            let network_data = body.network_data || '{}'
             let query = `INSERT INTO ${config.TABLE_GRASP_CARDS}
     (username, network, language, received, network_data)
-    VALUES (?, ?, ?, ?, '{}') RETURNING card_id`;
+    VALUES (?, ?, ?, ?, '{}') RETURNING card_id`
 
             // Execute
             db.query(query, {
                 type: QueryTypes.INSERT,
-                replacements: [body.username, body.network, body.language, false, network_data]
+                replacements: [
+                    body.username,
+                    body.network,
+                    body.language,
+                    false,
+                    network_data,
+                ],
             })
-                .then(data => {
+                .then((data) => {
                     // Card created, update database log
                     let query = `INSERT INTO ${config.TABLE_GRASP_LOG}
-                  (card_id, event_type) VALUES (?, ?)`;
+                  (card_id, event_type) VALUES (?, ?)`
                     db.query(query, {
                         type: QueryTypes.INSERT,
-                        replacements: [data[0][0].card_id, "CARD CREATED"]
+                        replacements: [data[0][0].card_id, 'CARD CREATED'],
                     })
                         .then(() => {
-                            resolve(data[0][0]);
+                            resolve(data[0][0])
                         })
-                        .catch(err => {
-                            reject(err);
-                        });
+                        .catch((err) => {
+                            reject(err)
+                        })
                 })
                 /* istanbul ignore next */
-                .catch(err => {
+                .catch((err) => {
                     /* istanbul ignore next */
-                    reject(err);
-                });
+                    reject(err)
+                })
         }),
 
     // Return specific card by id
-    byCardId: cardId =>
+    byCardId: (cardId) =>
         new Promise((resolve, reject) => {
             // Setup query
             let query = `SELECT c.card_id, c.username, c.network, c.language,
@@ -62,20 +68,23 @@ const cards = (config, db) => ({
     FROM ${config.TABLE_GRASP_CARDS} c
     LEFT JOIN ${config.TABLE_GRASP_REPORTS} r USING (card_id)
     WHERE c.card_id = ?
-    LIMIT 1`;
+    LIMIT 1`
 
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
-                replacements: [cardId]
+                replacements: [cardId],
             })
-                .then(data => resolve(...data))
+                .then((data) => resolve(...data))
                 /* istanbul ignore next */
-                .catch(err => {
-                    console.log("🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err", err);
+                .catch((err) => {
+                    console.log(
+                        '🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err',
+                        err
+                    )
                     /* istanbul ignore next */
-                    reject(err);
-                });
+                    reject(err)
+                })
         }),
 
     // All just expired report cards
@@ -95,8 +104,8 @@ const cards = (config, db) => ({
     OR (r.disaster_type = 'wind' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
     OR (r.disaster_type = 'haze' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
     OR (r.disaster_type = 'volcano' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
-    OR (r.disaster_type = 'fire' AND r.created_at >= to_timestamp(?)) AND r.created_at <= to_timestamp(?) )`;
-            let now = Date.now() / 1000;
+    OR (r.disaster_type = 'fire' AND r.created_at >= to_timestamp(?)) AND r.created_at <= to_timestamp(?) )`
+            let now = Date.now() / 1000
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
@@ -112,21 +121,21 @@ const cards = (config, db) => ({
                     now - config.VOLCANO_REPORTS_TIME_WINDOW,
                     now - config.VOLCANO_REPORTS_TIME_WINDOW + 1800,
                     now - config.FIRE_REPORTS_TIME_WINDOW,
-                    now - config.FIRE_REPORTS_TIME_WINDOW + 1800
-                ]
+                    now - config.FIRE_REPORTS_TIME_WINDOW + 1800,
+                ],
             })
-                .then(data => resolve(data))
+                .then((data) => resolve(data))
                 /* istanbul ignore next */
-                .catch(err => {
+                .catch((err) => {
                     /* istanbul ignore next */
-                    reject(err);
-                });
+                    reject(err)
+                })
         }),
 
     // Add entry to the reports table and then update the card record accordingly
     submitReport: (card, body) =>
         new Promise(async (resolve, reject) => {
-            let partner_code = !!body.partnerCode ? body.partnerCode : null;
+            let partner_code = !!body.partnerCode ? body.partnerCode : null
             // Log queries to debugger
             //   for (let query of queries) logger.debug(query.query, query.values);
 
@@ -148,67 +157,80 @@ const cards = (config, db) => ({
                         body.disaster_type,
                         body.is_training || false,
                         partner_code,
-                        "Confirmed",
+                        'Confirmed',
                         body.location.lng,
-                        body.location.lat
-                    ]
+                        body.location.lat,
+                    ],
                 },
                 {
                     query: `UPDATE ${config.TABLE_GRASP_CARDS}
               SET received = TRUE WHERE card_id = ?`,
                     type: QueryTypes.UPDATE,
-                    replacements: [card.card_id]
+                    replacements: [card.card_id],
                 },
                 {
                     query: `INSERT INTO ${config.TABLE_GRASP_LOG}
             (card_id, event_type)
             VALUES (?,?)`,
                     type: QueryTypes.INSERT,
-                    replacements: [card.card_id, "REPORT SUBMITTED"]
-                }
-            ];
+                    replacements: [card.card_id, 'REPORT SUBMITTED'],
+                },
+            ]
 
             // Log queries to debugger
             //   for (let query of queries) logger.debug(query.query, query.values);
 
             // Execute in a transaction as both INSERT and UPDATE must happen together
             try {
-                db.transaction(async transaction => {
+                db.transaction(async (transaction) => {
                     for (let query of queries) {
                         await db.query(query.query, {
                             type: query.type,
                             replacements: query.replacements,
-                            transaction
-                        });
+                            transaction,
+                        })
                     }
                 })
-                    .then(data => {
+                    .then((data) => {
                         return (
                             db
-                                .query(`SELECT * FROM grasp.push_to_all_reports(?) as notify`, {
-                                    type: QueryTypes.SELECT,
-                                    replacements: [card.card_id]
-                                })
-                                .then(notify => {
-                                    const notifyData = JSON.parse(notify[0].notify) || {};
-                                    notifyData.tweetID = body.tweetID || "";
-                                    resolve(notifyData);
+                                .query(
+                                    `SELECT * FROM grasp.push_to_all_reports(?) as notify`,
+                                    {
+                                        type: QueryTypes.SELECT,
+                                        replacements: [card.card_id],
+                                    }
+                                )
+                                .then((notify) => {
+                                    const notifyData =
+                                        JSON.parse(notify[0].notify) || {}
+                                    notifyData.tweetID = body.tweetID || ''
+                                    resolve(notifyData)
                                 })
                                 /* istanbul ignore next */
-                                .catch(err => {
-                                    console.log("🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err", err);
+                                .catch((err) => {
+                                    console.log(
+                                        '🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err',
+                                        err
+                                    )
                                     /* istanbul ignore next */
-                                    reject(err);
+                                    reject(err)
                                 })
-                        );
+                        )
                     })
-                    .catch(err => {
-                        console.log("🚀 ~ file: model.js ~ line 213 ~ returndb.transaction ~ err", err);
-                        reject(err);
+                    .catch((err) => {
+                        console.log(
+                            '🚀 ~ file: model.js ~ line 213 ~ returndb.transaction ~ err',
+                            err
+                        )
+                        reject(err)
                         // transaction.rollback();
-                    });
+                    })
             } catch (error) {
-                console.log("🚀 ~ file: model.js ~ line 197 ~ db.transaction ~ error", error);
+                console.log(
+                    '🚀 ~ file: model.js ~ line 197 ~ db.transaction ~ error',
+                    error
+                )
             }
         }),
 
@@ -222,41 +244,47 @@ const cards = (config, db) => ({
         image_url = COALESCE(?, null)
         WHERE card_id = ?`,
                     type: QueryTypes.UPDATE,
-                    replacements: [body.image_url, card.card_id]
+                    replacements: [body.image_url, card.card_id],
                 },
                 {
                     query: `INSERT INTO ${config.TABLE_GRASP_LOG}
             (card_id, event_type)
             VALUES (?, ?)`,
                     type: QueryTypes.INSERT,
-                    replacements: [card.card_id, "REPORT UPDATE (PATCH)"]
-                }
-            ];
+                    replacements: [card.card_id, 'REPORT UPDATE (PATCH)'],
+                },
+            ]
 
             // Log queries to debugger
             //   for (let query of queries) logger.debug(query.query, query.values);
 
             // Execute in a transaction as both INSERT and UPDATE must happen together
             try {
-                db.transaction(async transaction => {
+                db.transaction(async (transaction) => {
                     for (let query of queries) {
                         await db.query(query.query, {
                             type: query.type,
                             replacements: query.replacements,
-                            transaction
-                        });
+                            transaction,
+                        })
                     }
                 })
-                    .then(data => {
-                        resolve(data);
+                    .then((data) => {
+                        resolve(data)
                     })
-                    .catch(err => {
-                        console.log("🚀 ~ file: model.js:271 ~ newPromise ~ err", err);
-                        reject(err);
-                    });
+                    .catch((err) => {
+                        console.log(
+                            '🚀 ~ file: model.js:271 ~ newPromise ~ err',
+                            err
+                        )
+                        reject(err)
+                    })
             } catch (error) {
-                console.log("🚀 ~ file: model.js:263 ~ db.transaction ~ error", error);
-                reject(error);
+                console.log(
+                    '🚀 ~ file: model.js:263 ~ db.transaction ~ error',
+                    error
+                )
+                reject(error)
                 // transaction.rollback();
             }
         }),
@@ -274,30 +302,47 @@ const cards = (config, db) => ({
 				OR (disaster_type = 'haze' AND created_at >= to_timestamp($5))
 				OR (disaster_type = 'volcano' AND created_at >= to_timestamp($6))
 				OR (disaster_type = 'fire' AND created_at >= to_timestamp($7))
-			)`;
+			)`
 
-			let floodTimeWindow = Date.now() / 1000 -  config.FLOOD_REPORTS_TIME_WINDOW;
-            let eqTimeWindow = Date.now() / 1000 - config.EQ_REPORTS_TIME_WINDOW;
-            let hazeTimeWindow = Date.now() / 1000 - config.HAZE_REPORTS_TIME_WINDOW;
-            let windTimeWindow = Date.now() / 1000 - config.WIND_REPORTS_TIME_WINDOW;
-            let typhoonTimeWindow = Date.now() / 1000 - config.WIND_REPORTS_TIME_WINDOW;
-            let volcanoTimeWindow = Date.now() / 1000 - config.VOLCANO_REPORTS_TIME_WINDOW;
-            let fireTimeWindow = Date.now() / 1000 - config.FIRE_REPORTS_TIME_WINDOW;
+            let floodTimeWindow =
+                Date.now() / 1000 - config.FLOOD_REPORTS_TIME_WINDOW
+            let eqTimeWindow = Date.now() / 1000 - config.EQ_REPORTS_TIME_WINDOW
+            let hazeTimeWindow =
+                Date.now() / 1000 - config.HAZE_REPORTS_TIME_WINDOW
+            let windTimeWindow =
+                Date.now() / 1000 - config.WIND_REPORTS_TIME_WINDOW
+            let typhoonTimeWindow =
+                Date.now() / 1000 - config.WIND_REPORTS_TIME_WINDOW
+            let volcanoTimeWindow =
+                Date.now() / 1000 - config.VOLCANO_REPORTS_TIME_WINDOW
+            let fireTimeWindow =
+                Date.now() / 1000 - config.FIRE_REPORTS_TIME_WINDOW
 
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
-                bind: [floodTimeWindow , eqTimeWindow, hazeTimeWindow , windTimeWindow , typhoonTimeWindow , volcanoTimeWindow , fireTimeWindow]
+                bind: [
+                    floodTimeWindow,
+                    eqTimeWindow,
+                    hazeTimeWindow,
+                    windTimeWindow,
+                    typhoonTimeWindow,
+                    volcanoTimeWindow,
+                    fireTimeWindow,
+                ],
             })
-                .then(data => {
-                    resolve(data);
+                .then((data) => {
+                    resolve(data)
                 })
-                .catch(err => {
-                    console.log("🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err", err);
+                .catch((err) => {
+                    console.log(
+                        '🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err',
+                        err
+                    )
                     /* istanbul ignore next */
-                    reject(err);
-                });
-        })
-});
+                    reject(err)
+                })
+        }),
+})
 
-module.exports = cards;
+module.exports = cards
