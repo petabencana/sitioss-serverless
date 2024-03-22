@@ -1,6 +1,8 @@
 {
-    "eslintConfig": {
-        "extends": "@serverless/eslint-config/node",
-        "root": true
+    "extends": ["eslint:recommended", "@serverless/eslint-config/node"],
+    "rules": {
+        "no-unused-vars": "warn",
+        "no-console": "off",
+        "no-undef": "warn"
     }
 }
