@@ -1,4 +1,4 @@
-;('use strict')
+'use strict'
 /**
  * CogniCity Server /reports endpoint
  * @module reports/timeseries/index
@@ -19,31 +19,25 @@ const db = require('../../utils/db')
 
 app.get('/', cacheResponse('1 minute'), (req, res) => {
     // validate the time window, if fails send 400 error
-    let maxWindow =
-        new Date(req.query.start).getTime() +
-        config.API_REPORTS_TIME_WINDOW_MAX * 1000
-    let end = new Date(req.query.end)
+    const maxWindow = new Date(req.query.start).getTime() + config.API_REPORTS_TIME_WINDOW_MAX * 1000
+    const end = new Date(req.query.end)
     if (end > maxWindow) {
-        res.status(400).json({
+        return res.status(400).json({
             statusCode: 400,
             error: 'Bad Request',
-            message:
-                "child 'end' fails because [end is more than " +
-                config.API_REPORTS_TIME_WINDOW_MAX +
-                " seconds greater than 'start']",
+            message: `child 'end' fails because [end is more than ${config.API_REPORTS_TIME_WINDOW_MAX} seconds greater than 'start']`,
             validation: {
                 source: 'query',
                 keys: ['end'],
             },
         })
-        return
     }
     return timeseriesmodel(config, db)
         .count(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 46 ~ app.get ~ err', err)
-            res.status(400).json({
+            return res.status(400).json({
                 statusCode: 400,
                 result: 'Unable to process the request',
             })
@@ -51,9 +45,9 @@ app.get('/', cacheResponse('1 minute'), (req, res) => {
         })
 })
 
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 // Main router handler
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 const timeseries = async (event, context, callback) => {
     await db
         .authenticate()

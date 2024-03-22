@@ -1,4 +1,4 @@
-;('use strict')
+'use strict'
 /**
  * CogniCity Server /reports endpoint
  * @module reports/index
@@ -12,11 +12,7 @@ const app = require('lambda-api')()
 const archives = require('./archive/model')
 const timeseries = require('./timeseries/model')
 
-const {
-    cacheResponse,
-    handleGeoCapResponse,
-    handleGeoResponse,
-} = require('../utils/utils')
+const { cacheResponse, handleGeoCapResponse, handleGeoResponse } = require('../utils/utils')
 const Cap = require('../utils/cap')
 /**
  * Methods to get  reports from database
@@ -35,12 +31,7 @@ app.use((req, res, next) => {
 
 app.get('reports', cacheResponse('1 minute'), (req, res) =>
     reports(config, db)
-        .all(
-            req.query.timeperiod,
-            req.query.admin,
-            req.query.disaster,
-            req.query.training
-        )
+        .all(req.query.timeperiod, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => {
             // Sentry.setTag("invocation-source", "website");
             // console.log("🚀 ~ file: reports-main.js ~ line 32 ~ .then ~ data", data);
@@ -76,28 +67,25 @@ app.get('reports/:id', cacheResponse('1 minute'), (req, res) =>
 app.patch('reports/:id', (req, res) => {
     return reports(config, db)
         .addPoint(req.params.id, req.body)
-        .then((data) =>
-            data
-                ? res
-                      .status(200)
-                      .json({
-                          statusCode: 200,
-                          id: req.params.id,
-                          points: data.points,
-                      })
-                : res
-                      .status(404)
-                      .json({
-                          statusCode: 404,
-                          message: 'Report id ' + req.params.id + ' not found',
-                      })
-                      .end()
-        )
+        .then((data) => {
+            if (data) {
+                return res.status(200).json({
+                    statusCode: 200,
+                    id: req.params.id,
+                    points: data.points,
+                })
+            }
+            return res
+                .status(404)
+                .json({
+                    statusCode: 404,
+                    message: `Report id ${req.params.id} not found`,
+                })
+                .end()
+        })
         .catch((err) => {
             console.log('🚀 ~ file: reports-main.js ~ line 58 ~ err', err)
-            /* istanbul ignore next */
             // logger.error(err);
-            /* istanbul ignore next */
             // next(err);
         })
 })
@@ -105,23 +93,19 @@ app.patch('reports/:id', (req, res) => {
 app.patch('reports/:id/flag', (req, res) => {
     return reports(config, db)
         .setFlag(req.params.id, req.body)
-        .then((data) =>
-            data
-                ? res
-                      .status(200)
-                      .json({
-                          statusCode: 200,
-                          id: req.params.id,
-                          flag: data.flag,
-                      })
-                : res
-                      .status(404)
-                      .json({
-                          statusCode: 404,
-                          message: 'Report id ' + req.params.id + ' not found',
-                      })
-                      .end()
-        )
+        .then((data) => {
+            if (!data) {
+                return res.status(404).json({
+                    statusCode: 404,
+                    message: `Report id ${req.params.id} not found`,
+                })
+            }
+            return res.status(200).json({
+                statusCode: 200,
+                id: req.params.id,
+                flag: data.flag,
+            })
+        })
         .catch((err) => {
             console.log('🚀 ~ file: reports-main.js ~ line 76 ~ err', err)
             /* istanbul ignore next */
@@ -131,35 +115,9 @@ app.patch('reports/:id/flag', (req, res) => {
         })
 })
 
-app.get('reports/archive', async (req, res, next) => {
-    // do something
-    let maxWindow =
-        new Date(req.query.start).getTime() +
-        config.API_REPORTS_TIME_WINDOW_MAX * 1000
-    let end = new Date(req.query.end)
-    if (end > maxWindow) {
-        res.status(400).json({
-            statusCode: 400,
-            error: 'Bad Request',
-            message:
-                "child 'end' fails because [end is more than " +
-                config.API_REPORTS_TIME_WINDOW_MAX +
-                " seconds greater than 'start']",
-            validation: {
-                source: 'query',
-                keys: ['end'],
-            },
-        })
-        return
-    }
+app.get('reports/archive', async (req, res) => {
     return archives(config, db)
-        .all(
-            req.query.start,
-            req.query.end,
-            req.query.admin,
-            req.query.disaster,
-            req.query.training
-        )
+        .all(req.query.start, req.query.end, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => handleGeoCapResponse(data, req, res, cap))
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 46 ~ app.get ~ err', err)
@@ -172,26 +130,6 @@ app.get('reports/archive', async (req, res, next) => {
 })
 
 app.get('reports/timeseries', cacheResponse('1 minute'), (req, res) => {
-    // validate the time window, if fails send 400 error
-    let maxWindow =
-        new Date(req.query.start).getTime() +
-        config.API_REPORTS_TIME_WINDOW_MAX * 1000
-    let end = new Date(req.query.end)
-    if (end > maxWindow) {
-        res.status(400).json({
-            statusCode: 400,
-            error: 'Bad Request',
-            message:
-                "child 'end' fails because [end is more than " +
-                config.API_REPORTS_TIME_WINDOW_MAX +
-                " seconds greater than 'start']",
-            validation: {
-                source: 'query',
-                keys: ['end'],
-            },
-        })
-        return
-    }
     return timeseries(config, db)
         .count(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
@@ -205,9 +143,9 @@ app.get('reports/timeseries', cacheResponse('1 minute'), (req, res) => {
         })
 })
 
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 // Main router handler
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()

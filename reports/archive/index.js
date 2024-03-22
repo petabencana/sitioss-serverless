@@ -1,4 +1,4 @@
-;('use strict')
+'use strict'
 /**
  * CogniCity Server /reports endpoint
  * @module reports/index
@@ -20,48 +20,35 @@ const db = require('../../utils/db')
 app.get('archive', cacheResponse('1 minute'), (req, res) => {
     console.log('coming to archive get request')
     // validate the time window, if fails send 400 error
-    let maxWindow =
-        new Date(req.query.start).getTime() +
-        config.API_REPORTS_TIME_WINDOW_MAX * 1000
-    let end = new Date(req.query.end)
+    const maxWindow = new Date(req.query.start).getTime() + config.API_REPORTS_TIME_WINDOW_MAX * 1000
+    const end = new Date(req.query.end)
     if (end > maxWindow) {
-        res.status(400).json({
+        return res.status(400).json({
             statusCode: 400,
             error: 'Bad Request',
-            message:
-                "child 'end' fails because [end is more than " +
-                config.API_REPORTS_TIME_WINDOW_MAX +
-                " seconds greater than 'start']",
+            message: `child 'end' fails because [end is more than ${config.API_REPORTS_TIME_WINDOW_MAX} seconds greater than 'start']`,
             validation: {
                 source: 'query',
                 keys: ['end'],
             },
         })
-        return
     }
     return archives(config, db)
-        .all(
-            req.query.start,
-            req.query.end,
-            req.query.admin,
-            req.query.disaster,
-            req.query.training
-        )
-        .then((data) => handleGeoResponse(data, req, res, next))
-        .catch((err) => {
+        .all(req.query.start, req.query.end, req.query.admin, req.query.disaster, req.query.training)
+        .then((data) => handleGeoResponse(data, req, res))
+        .catch(() => {
             return res.status(400).json({
                 statusCode: 400,
                 error: 'Could not process the Request',
             })
-            console.log('🚀 ~ file: index.js ~ line 46 ~ app.get ~ err', err)
-            /* istanbul ignore next */
         })
 })
 
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 // Main router handler
-//----------------------------------------------------------------------------//
-const archive = async (event, context, callback) => {
+// ----------------------------------------------------------------------------//
+
+const archive = async (event, context) => {
     console.log('coming to archive')
     await db
         .authenticate()
@@ -77,10 +64,6 @@ const archive = async (event, context, callback) => {
     context.callbackWaitsForEmptyEventLoop = false
 
     return await app.run(event, context)
-
-    // Run the request
-
-    // app.run(event, context, callback);
 } // end router handler
 
 module.exports = archive

@@ -1,3 +1,4 @@
+'use strict'
 /**
  * CogniCity Server /reports/timeseries data model
  * @module src/api/reports/timeseries/model
@@ -16,7 +17,7 @@ const timeseries = (config, db) => ({
     count: (start, end, admin) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT ts, count(r.pkey)
+            const query = `SELECT ts, count(r.pkey)
     FROM generate_series(date_trunc('hour', $1::timestamp with time zone),
     date_trunc('hour', $2::timestamp with time zone), '1 hour') ts
     LEFT JOIN cognicity.all_reports r
@@ -34,10 +35,7 @@ const timeseries = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err',
-                        err
-                    )
+                    console.log('🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
