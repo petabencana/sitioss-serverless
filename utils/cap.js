@@ -37,12 +37,12 @@ module.exports = class Cap {
         let self = this
         let feed = {
             '@xmlns': 'http://www.w3.org/2005/Atom',
-            id: 'https://data.petabencana.id/floods',
-            title: 'petabencana.id Flood Affected Areas',
-            updated: moment().tz('Asia/Jakarta').format(),
+            id: 'https://api.mapakalamidad.ph/floods',
+            title: 'mapakalamidad.ph Flood Affected Areas',
+            updated: moment().tz('Asia/Manila').format(),
             author: {
-                name: 'petabencana.id',
-                uri: 'https://petabencana.id/',
+                name: 'mapakalamidad.ph',
+                uri: 'https://mapakalamidad.ph/',
             },
         }
 
@@ -60,20 +60,14 @@ module.exports = class Cap {
                 // - but enough information is contained in the URL
                 // that we could resolve the flooded report at the same point in time
                 id:
-                    'https://data.petabencana.id/floods?parent_name=' +
+                    'https://api.mapakalamidad.id/floods?parent_name=' +
                     encodeURI(feature.properties.parent_name) +
                     '&area_name=' +
                     encodeURI(feature.properties.area_name) +
                     '&time=' +
-                    encodeURI(
-                        moment
-                            .tz(feature.properties.last_updated, 'Asia/Jakarta')
-                            .format('YYYY-MM-DDTHH:mm:ssZ')
-                    ),
+                    encodeURI(moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')),
                 title: alert.identifier + ' Flood Affected Area',
-                updated: moment
-                    .tz(feature.properties.last_updated, 'Asia/Jakarta')
-                    .format('YYYY-MM-DDTHH:mm:ssZ'),
+                updated: moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ'),
                 content: {
                     '@type': 'text/xml',
                     alert: alert,
@@ -94,12 +88,12 @@ module.exports = class Cap {
         let self = this
         let feed = {
             '@xmlns': 'http://www.w3.org/2005/Atom',
-            id: 'https://data.petabencana.id/reports',
-            title: 'Disaster Reports in Indonesia',
-            updated: moment().tz('Asia/Jakarta').format(),
+            id: 'https://api.mapakalamidad.ph/reports',
+            title: 'Disaster Reports in Philippines',
+            updated: moment().tz('Asia/Manila').format(),
             author: {
-                name: 'petabencana.id',
-                uri: 'https://petabencana.id/',
+                name: 'mapakalamidad.ph',
+                uri: 'https://mapakalamidad.ph/',
             },
         }
 
@@ -118,10 +112,8 @@ module.exports = class Cap {
                 // - but enough information is contained in the URL
                 // that we could resolve the flooded report at the same point in time
                 id: feature.properties.pkey,
-                title: alert.identifier + ' Disasters in Indonesia',
-                updated: moment
-                    .tz(feature.properties.created_at, 'Asia/Jakarta')
-                    .format('YYYY-MM-DDTHH:mm:ssZ'),
+                title: alert.identifier + ' Disasters in Philippines',
+                updated: moment.tz(feature.properties.created_at, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ'),
                 content: {
                     '@type': 'text/xml',
                     alert: alert,
@@ -134,7 +126,7 @@ module.exports = class Cap {
 
     /**
    * Create CAP ALERT object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`}
+   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699527|`
                   + `CAP specification 3.2.1 "alert" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
@@ -152,16 +144,12 @@ module.exports = class Cap {
             '.' +
             feature.properties.area_name +
             '.' +
-            moment
-                .tz(feature.properties.last_updated, 'Asia/Jakarta')
-                .format('YYYY-MM-DDTHH:mm:ssZ')
+            moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')
         identifier = identifier.replace(/ /g, '_')
         alert.identifier = encodeURI(identifier)
 
         alert.sender = 'BPBD.JAKARTA.GOV.ID'
-        alert.sent = moment
-            .tz(feature.properties.last_updated, self.config.CAP_TIMEZONE)
-            .format('YYYY-MM-DDTHH:mm:ssZ')
+        alert.sent = moment.tz(feature.properties.last_updated, self.config.CAP_TIMEZONE).format('YYYY-MM-DDTHH:mm:ssZ')
         alert.status = 'Actual'
         alert.msgType = 'Alert'
         alert.scope = 'Public'
@@ -177,7 +165,7 @@ module.exports = class Cap {
 
     /**
    * Create CAP REPORT ALERT object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`}
+   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699527|`
                   + `CAP specification 3.2.1 "alert" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
@@ -195,16 +183,12 @@ module.exports = class Cap {
             '.' +
             feature.properties.source +
             '.' +
-            moment
-                .tz(feature.properties.created_at, 'Asia/Jakarta')
-                .format('YYYY-MM-DDTHH:mm:ssZ')
+            moment.tz(feature.properties.created_at, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')
         identifier = identifier.replace(/ /g, '_')
         alert.identifier = encodeURI(identifier)
 
         alert.sender = feature.properties.source
-        alert.sent = moment
-            .tz(feature.properties.created_at, self.config.CAP_TIMEZONE)
-            .format('YYYY-MM-DDTHH:mm:ssZ')
+        alert.sent = moment.tz(feature.properties.created_at, self.config.CAP_TIMEZONE).format('YYYY-MM-DDTHH:mm:ssZ')
         alert.status = 'Actual'
         alert.msgType = 'Alert'
         alert.scope = 'Public'
@@ -220,7 +204,7 @@ module.exports = class Cap {
 
     /**
    * Create a CAP INFO object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`}
+   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699542|`
                   + `CAP specification 3.2.2 "info" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
@@ -251,9 +235,7 @@ module.exports = class Cap {
             levelDescription = 'FLOODING OF OVER 150 CENTIMETERS'
         } else {
             self.logger.silly(
-                'Cap: createInfo(): State ' +
-                    feature.properties.state +
-                    ' cannot be resolved to a severity'
+                'Cap: createInfo(): State ' + feature.properties.state + ' cannot be resolved to a severity'
             )
             return
         }
@@ -262,20 +244,13 @@ module.exports = class Cap {
         info.certainty = 'Observed'
         // Add expiry time to information
         info.expires = moment
-            .tz(
-                new Date().getTime() +
-                    self.config.CAP_DEFAULT_EXPIRE_SECONDS * 1000,
-                self.config.CAP_TIMEZONE
-            )
+            .tz(new Date().getTime() + self.config.CAP_DEFAULT_EXPIRE_SECONDS * 1000, self.config.CAP_TIMEZONE)
             .format('YYYY-MM-DDTHH:mm:ssZ')
         info.senderName = 'JAKARTA EMERGENCY MANAGEMENT AGENCY'
         info.headline = 'FLOOD WARNING'
 
-        let descriptionTime = moment(feature.properties.last_updated)
-            .tz('Asia/Jakarta')
-            .format('HH:mm z')
-        let descriptionArea =
-            feature.properties.parent_name + ', ' + feature.properties.area_name
+        let descriptionTime = moment(feature.properties.last_updated).tz('Asia/Jakarta').format('HH:mm z')
+        let descriptionArea = feature.properties.parent_name + ', ' + feature.properties.area_name
         info.description =
             'AT ' +
             descriptionTime +
@@ -285,7 +260,7 @@ module.exports = class Cap {
             descriptionArea +
             '.'
 
-        info.web = 'https://petabencana.id/'
+        info.web = 'https://mapakalamidad.ph/'
 
         info.area = self.createArea(feature)
         // If area creation failed, don't create the info
@@ -298,7 +273,7 @@ module.exports = class Cap {
 
     /**
    * Create a CAP Report INFO object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`}
+   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699542|`
                   + `CAP specification 3.2.2 "info" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
@@ -317,18 +292,14 @@ module.exports = class Cap {
 
         // Add expiry time to information
         info.expires = moment
-            .tz(
-                new Date().getTime() +
-                    self.config.CAP_DEFAULT_EXPIRE_SECONDS * 1000,
-                self.config.CAP_TIMEZONE
-            )
+            .tz(new Date().getTime() + self.config.CAP_DEFAULT_EXPIRE_SECONDS * 1000, self.config.CAP_TIMEZONE)
             .format('YYYY-MM-DDTHH:mm:ssZ')
 
         info.senderName = feature.properties.source
         info.headline = 'DISASTER WARNING'
         info.description = encodeURI(feature.properties.text || '')
         info.web =
-            'https://data.petabencana.id/reports?admin=' +
+            'https://data.mapakalamidad.ph/reports?admin=' +
             encodeURI(feature.properties.tags.instance_region_code) +
             '&amp;disaster=' +
             encodeURI(feature.properties.disaster_type)
@@ -345,10 +316,7 @@ module.exports = class Cap {
             })
         }
         if (feature.properties.image_url)
-            info.parameter.push({
-                valueName: 'Image_url',
-                value: feature.properties.image_url,
-            })
+            info.parameter.push({ valueName: 'Image_url', value: feature.properties.image_url })
         if (feature.properties.tags.instance_region_code)
             info.parameter.push({
                 valueName: 'instance_region_code',
@@ -360,11 +328,7 @@ module.exports = class Cap {
             area.areaDesc =
                 'Location of the disaster reported in the area with code:' +
                 encodeURI(feature.properties.tags.instance_region_code)
-            area.circle =
-                feature.geometry.coordinates[1] +
-                ',' +
-                feature.geometry.coordinates[0] +
-                ' 0'
+            area.circle = feature.geometry.coordinates[1] + ',' + feature.geometry.coordinates[0] + ' 0'
         }
         info.area = area
         // If area creation failed, don't create the info
@@ -499,7 +463,7 @@ module.exports = class Cap {
     }
     /**
    * Create a CAP AREA object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`}
+   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                 + `CAP-v1.2-os.html#_Toc97699550|`
                 + `CAP specification 3.2.4 "area" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
@@ -510,8 +474,7 @@ module.exports = class Cap {
 
         let area = {}
 
-        area.areaDesc =
-            feature.properties.area_name + ', ' + feature.properties.parent_name
+        area.areaDesc = feature.properties.area_name + ', ' + feature.properties.parent_name
 
         // Collate array of polygon-describing strings from different geometry types
         area.polygon = []
@@ -522,11 +485,7 @@ module.exports = class Cap {
             featurePolygons = feature.geometry.coordinates
         } else {
             /* istanbul ignore next */
-            self.logger.error(
-                "Cap: createInfo(): Geometry type '" +
-                    feature.geometry.type +
-                    "' not supported"
-            )
+            console.error("Cap: createInfo(): Geometry type '" + feature.geometry.type + "' not supported")
             /* istanbul ignore next */
             return
         }
@@ -537,39 +496,25 @@ module.exports = class Cap {
         //          + `CAP-v1.2-os.html#_Toc97699550 - polygon`
         // See: `http://docs.oasis-open.org/emergency/cap/v1.2/`
         //          + `CAP-v1.2-os.html#_Toc520973440`
-        self.logger.debug(
-            'Cap: createInfo(): ' +
-                featurePolygons.length +
-                ' polygons detected for ' +
-                area.areaDesc
-        )
-        for (
-            let polygonIndex = 0;
-            polygonIndex < featurePolygons.length;
-            polygonIndex++
-        ) {
+        console.log('Cap: createInfo(): ' + featurePolygons.length + ' polygons detected for ' + area.areaDesc)
+        for (let polygonIndex = 0; polygonIndex < featurePolygons.length; polygonIndex++) {
             // Assume all geometries to be simple Polygons of single LineString
             if (featurePolygons[polygonIndex].length > 1) {
                 /* istanbul ignore next */
-                self.logger
-                    .error(`Cap: createInfo(): Polygon with interior rings is
+                console.error(`Cap: createInfo(): Polygon with interior rings is
                             not supported`)
                 /* istanbul ignore next */
                 return
             }
 
             let polygon = ''
-            self.logger.debug(
+            console.log(
                 'Cap: createInfo(): ' +
                     featurePolygons[polygonIndex][0].length +
                     ' points detected in polygon ' +
                     polygonIndex
             )
-            for (
-                let pointIndex = 0;
-                pointIndex < featurePolygons[polygonIndex][0].length;
-                pointIndex++
-            ) {
+            for (let pointIndex = 0; pointIndex < featurePolygons[polygonIndex][0].length; pointIndex++) {
                 let point = featurePolygons[polygonIndex][0][pointIndex]
                 polygon += point[1] + ',' + point[0] + ' '
             }

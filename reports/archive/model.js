@@ -23,23 +23,16 @@ const archive = (config, db) => ({
       LEFT JOIN ${config.TABLE_COGNICITY_PARTNERS} ON ${config.TABLE_REPORTS}.partner_code=${config.TABLE_COGNICITY_PARTNERS}.partner_code
       WHERE created_at >= $1::timestamp with time zone
       AND created_at <= $2::timestamp with time zone
-      AND ($3::text IS NULL OR tags->>'instance_region_code'=$3::text)
-      AND ($4::text is NULL OR disaster_type=$4::text)
-      AND ($5::boolean is NULL OR is_training=$5::boolean)
-      ORDER BY created_at DESC LIMIT $6`
-            const apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null
-            const adminType = admin || null
-            const disaster = disasterType || null
-            const isTraining = training?.toString() ? training : null
+      AND ($3 IS NULL OR tags->>'instance_region_code'=$3)
+      ORDER BY created_at DESC LIMIT $4`
 
             // var timeWindow = (Date.now() / 1000) - timeperiod;
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
-                bind: [start, end, adminType, disaster, isTraining, apiLimit],
+                bind: [start, end, admin, config.API_REPORTS_LIMIT],
             })
                 .then((data) => {
-                    console.log('archives Reports model', data)
                     resolve(data)
                 })
                 /* istanbul ignore next */
