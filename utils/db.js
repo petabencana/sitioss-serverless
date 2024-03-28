@@ -1,6 +1,8 @@
+'use strict'
 const config = require('../config')
 const { Sequelize } = require('sequelize')
 const pg = require('pg')
+
 const user = config.PGUSER
 const host = config.PGHOST
 const database = config.PGDATABASE
@@ -9,8 +11,8 @@ const port = config.PGPORT
 const db = new Sequelize(database, user, password, {
     dialect: 'postgres',
     dialectModule: pg,
-    host: host,
-    port: port,
+    host,
+    port,
 
     // Comment out this snippet incase of running it on local
     dialectOptions: {
