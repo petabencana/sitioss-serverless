@@ -1,4 +1,4 @@
-;('use strict')
+'use strict'
 /**
  * CogniCity Server /needs endpoint
  * @module needs/index
@@ -58,8 +58,8 @@ app.patch('needs/need/:id', (req, res) =>
 
 app.post('needs/create-need', (req, res) =>
     needs(config, db)
-        .addNewNeedReport(req.body)
-        .then((data) => res.status(200).json({ data: data }))
+        .ß(req.body)
+        .then((data) => res.status(200).json({ data }))
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
             return res.status(400).json({ message: 'Could not process request' })
@@ -78,9 +78,9 @@ app.post('needs/update-giver', (req, res) =>
         })
 )
 
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 // Main router handler
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()

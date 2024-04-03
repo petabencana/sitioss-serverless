@@ -10,6 +10,7 @@
 const builder = require('xmlbuilder')
 // moment module, JS date/time manipulation library
 const moment = require('moment-timezone')
+
 const SEVERE = 'Severe'
 const MINOR = 'Minor'
 const MODERATE = 'Moderate'
@@ -34,8 +35,8 @@ module.exports = class Cap {
      * @return {String} XML CAP data describing all areas
      **/
     geoJsonToAtomCap(features) {
-        let self = this
-        let feed = {
+        const self = this
+        const feed = {
             '@xmlns': 'http://www.w3.org/2005/Atom',
             id: 'https://api.mapakalamidad.ph/floods',
             title: 'mapakalamidad.ph Flood Affected Areas',
@@ -46,8 +47,8 @@ module.exports = class Cap {
             },
         }
 
-        for (let feature of features) {
-            let alert = self.createAlert(feature)
+        for (const feature of features) {
+            const alert = self.createAlert(feature)
             // If alert creation failed, don't create the entry
             if (!alert) {
                 continue
@@ -59,23 +60,21 @@ module.exports = class Cap {
                 // Note, this ID does not resolve to a real resource
                 // - but enough information is contained in the URL
                 // that we could resolve the flooded report at the same point in time
-                id:
-                    'https://api.mapakalamidad.id/floods?parent_name=' +
-                    encodeURI(feature.properties.parent_name) +
-                    '&area_name=' +
-                    encodeURI(feature.properties.area_name) +
-                    '&time=' +
-                    encodeURI(moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')),
-                title: alert.identifier + ' Flood Affected Area',
+                id: `https://api.mapakalamidad.id/floods?parent_name=${encodeURI(
+                    feature.properties.parent_name
+                )}&area_name=${encodeURI(feature.properties.area_name)}&time=${encodeURI(
+                    moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')
+                )}`,
+                title: `${alert.identifier} Flood Affected Area`,
                 updated: moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ'),
                 content: {
                     '@type': 'text/xml',
-                    alert: alert,
+                    alert,
                 },
             })
         }
 
-        return builder.create({ feed: feed }).end()
+        return builder.create({ feed }).end()
     }
 
     /**
@@ -85,8 +84,8 @@ module.exports = class Cap {
      * @return {String} XML CAP data describing all reports
      **/
     geoJsonToReportAtomCap(features) {
-        let self = this
-        let feed = {
+        const self = this
+        const feed = {
             '@xmlns': 'http://www.w3.org/2005/Atom',
             id: 'https://api.mapakalamidad.ph/reports',
             title: 'Disaster Reports in Philippines',
@@ -97,9 +96,9 @@ module.exports = class Cap {
             },
         }
 
-        for (let feature of features) {
+        for (const feature of features) {
             console.error(feature)
-            let alert = self.createReportAlert(feature)
+            const alert = self.createReportAlert(feature)
             // If alert creation failed, don't create the entry
             if (!alert) {
                 continue
@@ -112,39 +111,36 @@ module.exports = class Cap {
                 // - but enough information is contained in the URL
                 // that we could resolve the flooded report at the same point in time
                 id: feature.properties.pkey,
-                title: alert.identifier + ' Disasters in Philippines',
+                title: `${alert.identifier} Disasters in Philippines`,
                 updated: moment.tz(feature.properties.created_at, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ'),
                 content: {
                     '@type': 'text/xml',
-                    alert: alert,
+                    alert,
                 },
             })
         }
 
-        return builder.create({ feed: feed }).end()
+        return builder.create({ feed }).end()
     }
 
     /**
    * Create CAP ALERT object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
+   * See @link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699527|`
                   + `CAP specification 3.2.1 "alert" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
    * @return {Object} Object representing ALERT element for xmlbuilder
    */
     createAlert(feature) {
-        let self = this
+        const self = this
 
-        let alert = {}
+        const alert = {}
 
         alert['@xmlns'] = 'urn:oasis:names:tc:emergency:cap:1.2'
 
-        let identifier =
-            feature.properties.parent_name +
-            '.' +
-            feature.properties.area_name +
-            '.' +
-            moment.tz(feature.properties.last_updated, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')
+        let identifier = `${feature.properties.parent_name}.${feature.properties.area_name}.${moment
+            .tz(feature.properties.last_updated, 'Asia/Manila')
+            .format('YYYY-MM-DDTHH:mm:ssZ')}`
         identifier = identifier.replace(/ /g, '_')
         alert.identifier = encodeURI(identifier)
 
@@ -165,25 +161,22 @@ module.exports = class Cap {
 
     /**
    * Create CAP REPORT ALERT object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
+   * See @link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699527|`
                   + `CAP specification 3.2.1 "alert" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
    * @return {Object} Object representing ALERT element for xmlbuilder
    */
     createReportAlert(feature) {
-        let self = this
+        const self = this
 
-        let alert = {}
+        const alert = {}
 
         alert['@xmlns'] = 'urn:oasis:names:tc:emergency:cap:1.2'
 
-        let identifier =
-            feature.properties.pkey +
-            '.' +
-            feature.properties.source +
-            '.' +
-            moment.tz(feature.properties.created_at, 'Asia/Manila').format('YYYY-MM-DDTHH:mm:ssZ')
+        let identifier = `${feature.properties.pkey}.${feature.properties.source}.${moment
+            .tz(feature.properties.created_at, 'Asia/Manila')
+            .format('YYYY-MM-DDTHH:mm:ssZ')}`
         identifier = identifier.replace(/ /g, '_')
         alert.identifier = encodeURI(identifier)
 
@@ -211,9 +204,9 @@ module.exports = class Cap {
    * @return {Object} Object representing INFO element suitable for xmlbuilder
    */
     createInfo(feature) {
-        let self = this
+        const self = this
 
-        let info = {}
+        const info = {}
 
         info.category = 'Met'
         info.event = 'FLOODING'
@@ -234,9 +227,7 @@ module.exports = class Cap {
             severity = 'Severe'
             levelDescription = 'FLOODING OF OVER 150 CENTIMETERS'
         } else {
-            self.logger.silly(
-                'Cap: createInfo(): State ' + feature.properties.state + ' cannot be resolved to a severity'
-            )
+            self.logger.silly(`Cap: createInfo(): State ${feature.properties.state} cannot be resolved to a severity`)
             return
         }
         info.severity = severity
@@ -249,16 +240,9 @@ module.exports = class Cap {
         info.senderName = 'JAKARTA EMERGENCY MANAGEMENT AGENCY'
         info.headline = 'FLOOD WARNING'
 
-        let descriptionTime = moment(feature.properties.last_updated).tz('Asia/Jakarta').format('HH:mm z')
-        let descriptionArea = feature.properties.parent_name + ', ' + feature.properties.area_name
-        info.description =
-            'AT ' +
-            descriptionTime +
-            ' THE JAKARTA EMERGENCY MANAGEMENT AGENCY OBSERVED ' +
-            levelDescription +
-            ' IN ' +
-            descriptionArea +
-            '.'
+        const descriptionTime = moment(feature.properties.last_updated).tz('Asia/Jakarta').format('HH:mm z')
+        const descriptionArea = `${feature.properties.parent_name}, ${feature.properties.area_name}`
+        info.description = `AT ${descriptionTime} THE JAKARTA EMERGENCY MANAGEMENT AGENCY OBSERVED ${levelDescription} IN ${descriptionArea}.`
 
         info.web = 'https://mapakalamidad.ph/'
 
@@ -273,16 +257,16 @@ module.exports = class Cap {
 
     /**
    * Create a CAP Report INFO object.
-   * See {@link `http://docs.oasis-open.org/emergency/cap/v1.2/`
+   * See @link `http://docs.oasis-open.org/emergency/cap/v1.2/`
                   + `CAP-v1.2-os.html#_Toc97699542|`
                   + `CAP specification 3.2.2 "info" Element and Sub-elements`}
    * @param {Object} feature petabencana.id GeoJSON feature
    * @return {Object} Object representing INFO element suitable for xmlbuilder
    */
     createReportInfo(feature) {
-        let self = this
+        const self = this
 
-        let info = {}
+        const info = {}
 
         info.category = 'Geo'
         info.event = feature.properties.disaster_type
@@ -298,21 +282,19 @@ module.exports = class Cap {
         info.senderName = feature.properties.source
         info.headline = 'DISASTER WARNING'
         info.description = encodeURI(feature.properties.text || '')
-        info.web =
-            'https://data.mapakalamidad.ph/reports?admin=' +
-            encodeURI(feature.properties.tags.instance_region_code) +
-            '&amp;disaster=' +
-            encodeURI(feature.properties.disaster_type)
+        info.web = `https://data.mapakalamidad.ph/reports?admin=${encodeURI(
+            feature.properties.tags.instance_region_code
+        )}&amp;disaster=${encodeURI(feature.properties.disaster_type)}`
 
         info.parameter = []
-        let report_data = feature.properties.report_data || {}
-        for (let key in report_data) {
+        const report_data = feature.properties.report_data || {}
+        for (const key in report_data) {
             let value = report_data[key]
-            if (value.lat) value = value.lat + ', ' + value.lng
+            if (value.lat) value = `${value.lat}, ${value.lng}`
             if (Array.isArray(value)) value = value.join(',')
             info.parameter.push({
                 valueName: key,
-                value: value,
+                value,
             })
         }
         if (feature.properties.image_url)
@@ -323,12 +305,12 @@ module.exports = class Cap {
                 value: feature.properties.tags.instance_region_code,
             })
 
-        let area = {}
+        const area = {}
         if (feature.geometry.coordinates) {
-            area.areaDesc =
-                'Location of the disaster reported in the area with code:' +
-                encodeURI(feature.properties.tags.instance_region_code)
-            area.circle = feature.geometry.coordinates[1] + ',' + feature.geometry.coordinates[0] + ' 0'
+            area.areaDesc = `Location of the disaster reported in the area with code:${encodeURI(
+                feature.properties.tags.instance_region_code
+            )}`
+            area.circle = `${feature.geometry.coordinates[1]},${feature.geometry.coordinates[0]} 0`
         }
         info.area = area
         // If area creation failed, don't create the info
@@ -340,24 +322,24 @@ module.exports = class Cap {
     }
 
     _getDisasterSevearity(feature) {
-        let disasterType = feature.properties.disaster_type
+        const disasterType = feature.properties.disaster_type
         let level = UNKNOWN
         let reportData = feature.properties.report_data
         switch (disasterType) {
             case 'flood':
                 reportData = reportData || { flood_depth: 0 }
-                let depth = reportData.flood_depth || 0
+                const depth = reportData.flood_depth || 0
                 level = this._getFloodSevearity(depth)
                 break
             case 'earthquake':
-                let subType = feature.properties.report_data.report_type
+                const subType = feature.properties.report_data.report_type
                 if (subType === 'road') {
                     reportData = reportData || { accessabilityFailure: 0 }
-                    let accessability = reportData.accessabilityFailure || 0
+                    const accessability = reportData.accessabilityFailure || 0
                     level = this._getAccessabilitySevearity(accessability)
                 } else if (subType === 'structure') {
                     reportData = reportData || { structureFailure: 0 }
-                    let structureFailure = reportData.structureFailure || 0
+                    const structureFailure = reportData.structureFailure || 0
                     level = this._getStructureFailureSevearity(structureFailure)
                 }
                 break
@@ -385,7 +367,7 @@ module.exports = class Cap {
                 break
             case 'wind':
                 reportData = reportData || { impact: 0 }
-                let impact = reportData.impact || 0
+                const impact = reportData.impact || 0
                 level = this._getWindSevearity(impact)
                 break
             case 'volcano':
@@ -470,11 +452,11 @@ module.exports = class Cap {
    * @return {Object} Object representing AREA element for XML xmlbuilder
    */
     createArea(feature) {
-        let self = this
+        const self = this
 
-        let area = {}
+        const area = {}
 
-        area.areaDesc = feature.properties.area_name + ', ' + feature.properties.parent_name
+        area.areaDesc = `${feature.properties.area_name}, ${feature.properties.parent_name}`
 
         // Collate array of polygon-describing strings from different geometry types
         area.polygon = []
@@ -485,7 +467,7 @@ module.exports = class Cap {
             featurePolygons = feature.geometry.coordinates
         } else {
             /* istanbul ignore next */
-            console.error("Cap: createInfo(): Geometry type '" + feature.geometry.type + "' not supported")
+            console.error(`Cap: createInfo(): Geometry type '${feature.geometry.type}' not supported`)
             /* istanbul ignore next */
             return
         }
@@ -496,7 +478,7 @@ module.exports = class Cap {
         //          + `CAP-v1.2-os.html#_Toc97699550 - polygon`
         // See: `http://docs.oasis-open.org/emergency/cap/v1.2/`
         //          + `CAP-v1.2-os.html#_Toc520973440`
-        console.log('Cap: createInfo(): ' + featurePolygons.length + ' polygons detected for ' + area.areaDesc)
+        console.log(`Cap: createInfo(): ${featurePolygons.length} polygons detected for ${area.areaDesc}`)
         for (let polygonIndex = 0; polygonIndex < featurePolygons.length; polygonIndex++) {
             // Assume all geometries to be simple Polygons of single LineString
             if (featurePolygons[polygonIndex].length > 1) {
@@ -509,14 +491,11 @@ module.exports = class Cap {
 
             let polygon = ''
             console.log(
-                'Cap: createInfo(): ' +
-                    featurePolygons[polygonIndex][0].length +
-                    ' points detected in polygon ' +
-                    polygonIndex
+                `Cap: createInfo(): ${featurePolygons[polygonIndex][0].length} points detected in polygon ${polygonIndex}`
             )
             for (let pointIndex = 0; pointIndex < featurePolygons[polygonIndex][0].length; pointIndex++) {
-                let point = featurePolygons[polygonIndex][0][pointIndex]
-                polygon += point[1] + ',' + point[0] + ' '
+                const point = featurePolygons[polygonIndex][0][pointIndex]
+                polygon += `${point[1]},${point[0]} `
             }
             area.polygon.push(polygon)
         }

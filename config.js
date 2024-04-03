@@ -8,7 +8,7 @@
 require('dotenv').config({ silent: true })
 
 const config = {
-    DEPLOYMENT: process.env.DEPLOYMENT || 'id',
+    DEPLOYMENT: process.env.DEPLOYMENT || 'ph',
     LOG_LEVEL: process.env.LOG_LEVEL || 'error',
     GEO_FORMAT_DEFAULT: process.env.GEO_FORMAT_DEFAULT || 'topojson',
     GEO_FORMATS: (process.env.GEO_FORMATS || 'geojson,topojson').split(','),
@@ -69,7 +69,7 @@ const config = {
     TABLE_SUBSCRIPTIONS: process.env.TABLE_SUBSCRIPTIONS || 'subscriptions.subscriptions_table',
     TABLE_SUBSCRIPTIONS_REGIONS: process.env.TABLE_SUBSCRIPTIONS_REGIONS || 'subscriptions.region_details',
     TABLE_SUBSCRIPTIONS_LOG: process.env.TABLE_SUBSCRIPTIONS_LOG || 'subscriptions.log',
-    TABLE_REGIONS: process.env.TABLE_REGIONS || 'cognicity.local_cities',
+    TABLE_REGIONS: process.env.TABLE_REGIONS || 'cognicity.local_regions',
     TABLE_LOGISTICS_NEEDS: process.env.TABLE_LOGISTICS_NEEDS || 'logistics.need_reports',
     TABLE_LOGISTICS_GIVER_DETAILS: process.env.TABLE_LOGISTICS_GIVER_DETAILS || 'logistics.giver_details',
 }

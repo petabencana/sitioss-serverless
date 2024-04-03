@@ -1,4 +1,4 @@
-;('use strict')
+'use strict'
 /**
  * CogniCity Server /floods endpoint
  * @module regions/index
@@ -8,11 +8,7 @@ const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
 
-const {
-    cacheResponse,
-    handleGeoResponse,
-    handleGeoCapResponse,
-} = require('../utils/utils')
+const { cacheResponse, handleGeoResponse, handleGeoCapResponse } = require('../utils/utils')
 
 const Cap = require('../utils/cap')
 
@@ -48,9 +44,9 @@ app.get('regions/bounds', cacheResponse('1 day'), (req, res) =>
         })
 )
 
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 // Main router handler
-//----------------------------------------------------------------------------//
+// ----------------------------------------------------------------------------//
 module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()

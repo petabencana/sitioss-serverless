@@ -1,3 +1,4 @@
+'use strict'
 /**
  * CogniCity Server /cities data model
  * @module src/api/cities/model
@@ -16,7 +17,7 @@ const regions = (config, db) => ({
     all: () =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT id , region, region_code, city , ST_AsBinary(the_geom)
+            const query = `SELECT region, region_code , ST_AsBinary(the_geom)
       FROM ${config.TABLE_REGIONS}`
 
             // Execute
@@ -38,7 +39,7 @@ const regions = (config, db) => ({
     byID: (admin) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT id , region, region_code, city , ST_AsBinary(the_geom)
+            const query = `SELECT region, region_code , ST_AsBinary(the_geom)
       FROM ${config.TABLE_REGIONS}
       where gid=$1 `
 
@@ -60,7 +61,7 @@ const regions = (config, db) => ({
     byRegionCode: (regionCode) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT id , region, region_code, city
+            const query = `SELECT region, region_code
       FROM ${config.TABLE_REGIONS} WHERE region_code=$1`
 
             // Execute
