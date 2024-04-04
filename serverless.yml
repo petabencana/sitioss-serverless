@@ -15,10 +15,10 @@ custom:
         basePath: '${param:service}'
         domainName: '${env:DOMAIN_NAME}'
         stage: '${opt:stage}'
-        certificateArn: 'arn:aws:acm:us-east-1:803326344021:certificate/9065d37a-0e50-4879-aeec-b866d900cfbc'
+        certificateArn: 'arn:aws:acm:us-east-1:803326344021:certificate/79c384d2-6262-42bc-b4f3-c6b1fd0ef8cb'
         createRoute53Record: true
 
-service: cognicity-${env:SERVICE}-mapa-sls
+service: cognicity-${env:SERVICE}-sls
 
 provider:
     name: aws

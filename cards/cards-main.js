@@ -244,7 +244,8 @@ function getSubscriptions() {
     })
 }
 
-function addSubscriptionLog(subscription, region) {
+function addSubscriptionLog(subscription, notificationMedium, region) {
+    subscription.notificationMedium = notificationMedium
     return new Promise((resolve, reject) => {
         return subscriptions(config, db)
             .addSubscriptionLog(subscription, region)
@@ -290,8 +291,13 @@ function canTriggerNotification(data) {
                 )
                 const cityName = filterByCityName[0].city
 
-                if (filterRegionCodeAndCount.length > 0) {
+                const notificationsLog = await getSubscriptionLog('info@petabencana.id', regionCodeOfReportCreated)
+
+                if (filterRegionCodeAndCount.length > 0 && notificationsLog.length === 0) {
+                    const body = {}
+                    body.userId = 'info@petabencana.id'
                     await invokeSNSTopicLambda({ cityName, instanceRegionCode, reportId })
+                    await addSubscriptionLog(body, 'email', regionCodeOfReportCreated)
                 }
 
                 const subscriptionData = await getSubscriptions()
@@ -319,7 +325,7 @@ function canTriggerNotification(data) {
                             const matchingCity = isCityInRegionCodes(transformedReportCounts, regionCode)
                             if (subscriptionLogData.length === 0 && matchingCity) {
                                 return invokeNotify(body).then(async () => {
-                                    return await addSubscriptionLog(subscription, regionCode)
+                                    return await addSubscriptionLog(subscription, 'whatsapp', regionCode)
                                 })
                             }
                             return Promise.resolve()
