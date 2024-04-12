@@ -3,6 +3,7 @@
  * @module src/api/needs/model
  **/
 const { QueryTypes } = require('@sequelize/core')
+const logger = require('../utils/logger')
 /**
  * Methods to get infrastructure layers from database
  * @alias module:src/api/needs/model
@@ -80,7 +81,6 @@ const needs = (config, db) => ({
                     resolve(data)
                 })
                 .catch((err) => {
-                    console.log('Data failed to insert in need reports', err)
                     reject(err)
                 })
         })
@@ -136,7 +136,6 @@ const needs = (config, db) => ({
 				);`
 
                 const userId = await checkIfUserExists(db, body)
-                console.log('What is the user id', userId)
                 // Execute
                 db.query(queryForGiverDetails, {
                     type: QueryTypes.INSERT,
@@ -153,12 +152,11 @@ const needs = (config, db) => ({
                         resolve(data)
                     })
                     .catch((err) => {
-                        console.log('Data failed to insert in need reports', err)
                         reject(err)
                     })
             })
         } catch (err) {
-            console.log('Error inserting', err)
+            logger.error('Error inserting in needs', err)
         }
     },
 })
@@ -186,7 +184,6 @@ const addUser = (db, body) => {
                 resolve(user_id)
             })
             .catch((err) => {
-                console.log('error here', err)
                 reject(err)
             })
     })
@@ -204,7 +201,6 @@ const queryUserId = (db, body) => {
                 resolve(data)
             })
             .catch((err) => {
-                console.log('error here', err)
                 reject(err)
             })
     })

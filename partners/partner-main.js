@@ -5,7 +5,7 @@ const db = require('../utils/db')
 const app = require('lambda-api')()
 const AWS = require('aws-sdk')
 const multipart = require('aws-lambda-multipart-parser')
-
+const logger = require('../utils/logger')
 let s3 = new AWS.S3({
     accessKeyId: config.AWS_S3_ACCESS_KEY_ID,
     secretAccessKey: config.AWS_S3_SECRET_ACCESS_KEY,
@@ -17,13 +17,10 @@ const uploadToS3 = (params) => {
     return new Promise((resolve, reject) => {
         s3.upload(params, (err, s3res) => {
             if (err) {
-                console.log(
-                    '🚀 ~ file: partner-main.js ~ line 20 ~ s3.upload ~ err',
-                    err
-                )
+                logger.error('uploadToS3 err',err)
                 reject(err)
             } else {
-                console.log('uploaded to s3', s3res)
+                logger.info('uploaded to s3', s3res)
                 resolve(s3res)
             }
         })
@@ -60,10 +57,7 @@ const s3util = (s3params) => {
                 })
             })
             .catch((err) => {
-                console.log(
-                    '🚀 ~ file: partner-main.js ~ line 62 ~ returnnewPromise ~ err',
-                    err
-                )
+                logger.error('s3util',err);
                 reject('Error while uploading')
             })
     })
@@ -83,18 +77,12 @@ const getAndDeleteObject = (requestBody, params) => {
             }
             s3.deleteObject(s3params, function (err, data) {
                 if (err) {
-                    console.log(
-                        '🚀 ~ file: partner-main.js ~ line 161 ~ err',
-                        err
-                    )
+                    logger.error('deleteObject err',err)
                 }
             })
         })
         .catch((err) => {
-            console.log(
-                '🚀 ~ file: partner-main.js ~ line 168 ~ getAndDeleteObject ~ err',
-                err
-            )
+            logger.error('getAndDeleteObject catch',err)
         })
 }
 
@@ -116,8 +104,8 @@ app.post('partners/create-partner', async (req, res) => {
     if (!body.partner_code || !body.partner_icon || !body.partner_name) {
         return res.status(400).json({ error: 'Invalid Request params' })
     }
-    console.log(
-        '🚀 ~ file: partner-main.js ~ line 107 ~ app.post ~ ImageBuffer',
+    logger.info(
+        '/partners/create-partner  request received with partner code ',
         ImageBuffer
     )
 
@@ -137,23 +125,23 @@ app.post('partners/create-partner', async (req, res) => {
             return partners(config, db)
                 .addNewPartner(body)
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: partner-main.js ~ line 114 ~ .then ~ data',
+                    logger.info(
+                        's3util newPartner data',
                         data
                     )
 
                     return res.status(200).json(data)
                 })
                 .catch((e) => {
-                    console.error(e)
+                    logger.error('partners/create-partner new partner err',e)
                     return res
                         .status(400)
                         .json({ error: 'Error while processing request' })
                 })
         })
         .catch((err) => {
-            console.log(
-                '🚀 ~ file: partner-main.js ~ line 143 ~ app.post ~ err',
+            logger.error(
+                'partners/create-partner err',
                 err
             )
             return res
@@ -170,7 +158,7 @@ app.get('partners', async (req, res) => {
         .fetchAllPartners()
         .then((data) => data)
         .catch((e) => {
-            console.log('Error here', e)
+            logger.error('/partners', e)
             res.status(400).json({ error: 'Error while fetching data' })
         })
 })
@@ -181,10 +169,7 @@ app.get('partners/partner', (req, res) => {
         .getByCode(req.query)
         .then((data) => res.json(data))
         .catch((err) => {
-            console.log(
-                '🚀 ~ file: partner-main.js ~ line 122 ~ app.get ~ err',
-                err
-            )
+            logger.error('/partners/partner', err)
             res.status(400).json({ error: 'Error while fetching data' })
 
             /* istanbul ignore next */
@@ -202,8 +187,8 @@ app.patch('partners/partner/:id', (req, res) => {
             return res.json(data)
         })
         .catch((err) => {
-            console.log(
-                '🚀 ~ file: partner-main.js ~ line 126 ~ api.patch ~ err',
+            logger.error(
+                'partners/partner/:id patch',
                 err
             )
         })
@@ -257,10 +242,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         }) // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good
     // if you want to freeze and reuse these connections

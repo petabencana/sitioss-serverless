@@ -10,7 +10,7 @@ const app = require('lambda-api')()
 const archive = require('./archive/model')
 const timeseries = require('./timeseries/model')
 const Cap = require('../utils/cap')
-
+const logger = require('../utils/logger')
 const { cacheResponse, formatGeo, jwtCheck } = require('../utils/utils')
 
 // Caching
@@ -101,10 +101,7 @@ app.get(
                               )
                               /* istanbul ignore next */
                               .catch((err) => {
-                                  console.log(
-                                      '🚀 ~ file: index.js ~ line 90 ~ app.get ~ err',
-                                      err
-                                  )
+                                  logger.error('floods/old formatgeo with cap err',err)
                               })
                         : // Otherwise hand off to geo formatter
                           formatGeo(data, req.query.geoformat)
@@ -118,17 +115,11 @@ app.get(
                               )
                               /* istanbul ignore next */
                               .catch((err) => {
-                                  console.log(
-                                      '🚀 ~ file: index.js ~ line 97 ~ app.get ~ err',
-                                      err
-                                  )
+                                logger.error('floods/old formatgeo without cap err',err)
                               })
                 )
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: index.js ~ line 99 ~ app.get ~ err',
-                        err
-                    )
+                    logger.error('/floods/old err',err)
                 })
         }
     }
@@ -172,10 +163,7 @@ app.get('floods', cacheResponse(config.CACHE_DURATION_FLOODS), (req, res) => {
                           )
                           /* istanbul ignore next */
                           .catch((err) => {
-                              console.log(
-                                  '🚀 ~ file: index.js ~ line 149 ~ api.get ~ err',
-                                  err
-                              )
+                            logger.error('/floods formatgeo with cap err',err)
                           })
                     : // Otherwise hand off to geo formatter
                       formatGeo(data, req.query.geoformat)
@@ -186,17 +174,11 @@ app.get('floods', cacheResponse(config.CACHE_DURATION_FLOODS), (req, res) => {
                           )
                           /* istanbul ignore next */
                           .catch((err) => {
-                              console.log(
-                                  '🚀 ~ file: index.js ~ line 161 ~ api.get ~ err',
-                                  err
-                              )
+                            logger.error('/floods formatgeo without cap err',err)
                           })
             )
             .catch((err) => {
-                console.log(
-                    '🚀 ~ file: index.js ~ line 168 ~ api.get ~ err',
-                    err
-                )
+                logger.error('/floods err',err)
             })
     }
 })
@@ -213,7 +195,7 @@ app.get(
                 res.status(200).json({ statusCode: 200, result: data })
             )
             .catch((err) => {
-                console.log('🚀 ~ file: index.js ~ line 183 ~ err', err)
+                logger.error('/floods/states',err)
             })
     }
 )
@@ -230,7 +212,7 @@ app.get(
                 res.status(200).json({ statusCode: 200, result: data })
             )
             .catch((err) => {
-                console.log('🚀 ~ file: index.js ~ line 203 ~ err', err)
+                logger.error('/floods/places',err)
             })
     }
 )
@@ -253,7 +235,7 @@ app.put('floods/:localAreaId', (req, res) =>
         })
         /* istanbul ignore next */
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 221 ~ err', err)
+            logger.error('/floods/:localAreaId',err)
         })
 )
 
@@ -279,7 +261,7 @@ app.put('floods/geomid/:geomId', (req, res) =>
         })
         /* istanbul ignore next */
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 244 ~ err', err)
+            logger.error('/floods/geomid/:geomId',err)
         })
 )
 
@@ -290,10 +272,7 @@ app.delete('floods/:localAreaId', async (req, res) => {
     try {
         // If the token is not valid, an error is thrown:
         payload = await jwtCheck.verify(accessToken)
-        console.log(
-            '🚀 ~ file: index.js ~ line 254 ~ app.delete ~ payload',
-            payload
-        )
+        logger.error('/floods/:localAreaId payload',err)
         return (
             floods(config, db)
                 .clearREMState(req.params.localAreaId, req.query.username)
@@ -307,10 +286,7 @@ app.delete('floods/:localAreaId', async (req, res) => {
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: index.js ~ line 266 ~ app.delete ~ err',
-                        err
-                    )
+                logger.error('/floods/:localAreaId',err)
                     /* istanbul ignore next */
                 })
         )
@@ -345,7 +321,7 @@ app.get('floods/archives/old', cacheResponse('1 minute'), (req, res) => {
         .maxstate(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 45 ~ err', err)
+            logger.error('/floods/archives/old',err)
         })
 })
 
@@ -376,7 +352,7 @@ app.get('floods/archives', cacheResponse('1 minute'), (req, res) => {
         .maxstate(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 77 ~ err', err)
+            logger.error('/floods/archives',err)
         })
 })
 
@@ -411,7 +387,7 @@ app.get('floods/timeseries', cacheResponse('1 minute'), (req, res) => {
         )
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 46 ~ api.get ~ err', err)
+            logger.error('/floods/timeseries',err)
         })
 })
 
@@ -422,10 +398,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

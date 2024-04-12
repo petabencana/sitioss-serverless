@@ -80,10 +80,6 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 73 ~ newPromise ~ err',
-                        err
-                    )
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -108,10 +104,6 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err',
-                        err
-                    )
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -150,10 +142,6 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 137 ~ newPromise ~ err',
-                        err
-                    )
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -179,10 +167,6 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 163 ~ newPromise ~ err',
-                        err
-                    )
                     /* istanbul ignore next */
                     reject(err)
                 })

@@ -8,7 +8,7 @@ const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
 const Cap = require('../utils/cap')
-
+const logger = require('../utils/logger')
 const { cacheResponse, handleGeoCapResponse } = require('../utils/utils')
 
 /**
@@ -31,7 +31,7 @@ app.get('volcanos/list-volcano', cacheResponse('1 minute'), (req, res, next) =>
         .listVolcano()
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: volcanos-main.js:31 ~ err', err)
+            logger.error('/volcanos/list-volcano',err);
             return res
                 .status(500)
                 .json({ message: 'Could not process request' })
@@ -45,7 +45,7 @@ app.get('volcanos/last-eruption', cacheResponse('1 minute'), (req, res, next) =>
         .lastEruption()
         .then((data) => handleGeoCapResponse(data, req, res, cap))
         .catch((err) => {
-            console.log('🚀 ~ file: volcanos-main.js:43 ~ err', err)
+            logger.error('/volcanos/last-eruption',err)
             return res
                 .status(500)
                 .json({ message: 'Could not process request' })
@@ -60,10 +60,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

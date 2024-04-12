@@ -7,7 +7,7 @@ const archive = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')({ version: 'v1.0', base: 'v1' })
-
+const logger = require('../utils/logger')
 const { cacheResponse } = require('../utils/utils')
 
 /**
@@ -42,7 +42,7 @@ app.get('/old', cacheResponse('1 minute'), (req, res) => {
         .maxstate(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 45 ~ err', err)
+            logger.error('/old', err)
         })
 })
 
@@ -73,7 +73,7 @@ app.get('/', cacheResponse('1 minute'), (req, res) => {
         .maxstate(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 77 ~ err', err)
+            logger.error('/ cacheResponse', err)
         })
 })
 
@@ -84,10 +84,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('INFO - Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('ERROR - Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good
