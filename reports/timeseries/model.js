@@ -35,7 +35,6 @@ const timeseries = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log('🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })

@@ -24,11 +24,9 @@ const partners = (config, db) => ({
                 type: QueryTypes.INSERT,
             })
                 .then(() => {
-                    console.log('Partner data success')
                     resolve({ partner_code: body.partner_code, created: true })
                 })
                 .catch((err) => {
-                    console.log('Partner data failure', err)
                     reject(err)
                 })
         }),
@@ -44,7 +42,6 @@ const partners = (config, db) => ({
                 )
                 resolve(users)
             } catch (err) {
-                console.log('Error here', err)
                 reject(err)
             }
         }),

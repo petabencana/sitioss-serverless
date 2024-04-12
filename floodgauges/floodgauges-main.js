@@ -7,7 +7,7 @@ const floodgauges = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
-
+const logger = require('../utils/logger')
 const { cacheResponse, handleGeoResponse } = require('../utils/utils')
 
 /**
@@ -28,7 +28,7 @@ app.get('floodgauges', cacheResponse('1 minute'), (req, res, next) =>
         .all(req.query.admin)
         .then((data) => handleGeoResponse(data, req, res, next))
         .catch((err) => {
-            console.log('🚀 ~ file: floodgauges-main.js ~ line 26 ~ err', err)
+            logger.error('/floodgauges',err)
             /* istanbul ignore next */
         })
 )
@@ -39,7 +39,7 @@ app.get('floodgauges/:id', cacheResponse('1 minute'), (req, res, next) =>
         .byId(req.params.id)
         .then((data) => handleGeoResponse(data, req, res, next))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 39 ~ err', err)
+            logger.error('/floodgauges/:id',err)
         })
 )
 
@@ -50,10 +50,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good
