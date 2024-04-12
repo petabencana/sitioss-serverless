@@ -11,7 +11,7 @@ const db = require('../utils/db')
 const app = require('lambda-api')()
 const AWS = require('aws-sdk')
 const { handleResponse, filterReports } = require('../utils/utils')
-
+const logger = require('../utils/logger')
 AWS.config.region = config.AWS_REGION
 const lambda = new AWS.Lambda()
 
@@ -60,7 +60,7 @@ app.head('cards/:cardId', (req, res) => {
         })
         .catch((err) => {
             res.status(404).json({ message: 'Could not find card' })
-            console.log('🚀 ~ file: cards-main.js ~ line 49 ~ app.head ~ err', err)
+            logger.error('/cards/:cardId -head',err)
         })
 })
 
@@ -70,7 +70,7 @@ app.get('cards/expiredcards', (req, res) => {
         .expiredCards()
         .then((data) => handleResponse(data, res))
         .catch((err) => {
-            console.log('🚀 ~ file: cards-main.js ~ line 66 ~ app.get ~ err', err)
+            logger.error('/cards/expiredcards',err)
             res.status(400).json({ error: 'Failed to fetch expired card' })
         })
 })
@@ -81,7 +81,7 @@ app.get('cards/:cardId', (req, res) => {
         .byCardId(req.params.cardId)
         .then((data) => handleResponse(data, res))
         .catch((err) => {
-            console.log('🚀 ~ file: cards-main.js ~ line 74 ~ api.get ~ err', err)
+            logger.error('/cards/:cardId',err)
         })
 })
 
@@ -115,7 +115,7 @@ app.put('cards/:cardId', (req, res) => {
                                       })
                             })
                             .catch((err) => {
-                                console.log('🚀 ~ file: cards-main.js ~ line 120 ~ .then ~ err', err)
+                                logger.error('/cards/:cardId with card nad cardId -put',err) 
                                 return res.status(400).json({
                                     message: 'Error while creating report',
                                 })
@@ -131,7 +131,7 @@ app.put('cards/:cardId', (req, res) => {
                 return createReport(card, req, res)
             })
     } catch (err) {
-        console.log('🚀 ~ file: cards-main.js ~ line 137 ~ app.put ~ err', err)
+        logger.error('/cards/:cardId -put',err)
         return res.status(400).json({
             message: 'Error while creating report',
             // /* istanbul ignore next */
@@ -221,7 +221,7 @@ app.patch('cards/:cardId', (req, res) => {
                     })
                 })
                 .catch((err) => {
-                    console.log('🚀 ~ file: cards-main.js ~ line 255 ~ .then ~ err', err)
+                    logger.error('/cards/:cardId -patch',err)
                     return res.status(400).json({
                         error: 'Error while processing request',
                     })
@@ -338,11 +338,11 @@ function canTriggerNotification(data) {
                 return Promise.resolve('continue')
             })
             .catch((err) => {
-                console.log('Error while fetching response', err)
+                logger.error('filteredSubscriptionData err')
                 throw err // Propagating error to the caller
             })
     } catch (err) {
-        console.log('Error in trigger notification', err)
+        logger.error('canTriggerNotification err',err)
         throw err // Propagating error to the caller
     }
 }
@@ -363,7 +363,7 @@ async function createReport(card, req, res) {
                 })
             } catch (err) {
                 // Handle error or log it
-                console.error('Error while trigger notifications', err)
+                logger.error('submitReport err',err)
                 return res.status(200).json({
                     cardId: req.params.cardId,
                     created: true,
@@ -371,7 +371,7 @@ async function createReport(card, req, res) {
             }
         })
         .catch((err) => {
-            console.log('🚀 ~ file: cards-main.js ~ line 176 ~ createReport ~ err', err)
+            logger.error('createReport err',err)
             return res.status(400).json({
                 message: 'Error while creating report',
             })
@@ -400,15 +400,15 @@ function invokeNotify(body) {
         try {
             lambda.invoke(params, (err) => {
                 if (err) {
-                    console.log('Err', err)
+                    logger.error('invoke notify err',err)
                     reject(err)
                 } else {
                     resolve('Lambda invoked')
-                    console.log('Lambda invoked')
+                    logger.info('Lambda invoked')
                 }
             })
         } catch (err) {
-            console.log('error: ', err)
+            logger.error('invokeNotify err',err)
         }
     })
 }
@@ -424,14 +424,14 @@ async function invokeSNSTopicLambda({ cityName, instanceRegionCode, reportId }) 
             lambda.invoke(params, (err) => {
                 if (err) {
                     reject(err)
-                    console.log('Err', err)
+                    logger.error('invoke notify err',err)
                 } else {
                     resolve('SNS Lambda invoked')
-                    console.log('SNS Lambda invoked')
+                    logger.info('SNS Lambda invoked')
                 }
             })
         } catch (err) {
-            console.log('error: ', err)
+            logger.error('invokeSNSTopicLambda err',err) 
         }
     })
 }
