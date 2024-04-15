@@ -4,7 +4,7 @@
  * @module cards/model
  **/
 const { QueryTypes } = require('@sequelize/core')
-
+const logger = require('../utils/logger')
 /**
  * Methods to interact with feeds layers in database
  * @alias module:src/api/partners/model
@@ -73,7 +73,6 @@ const cards = (config, db) => ({
                 .then((data) => resolve(...data))
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log('🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -197,19 +196,17 @@ const cards = (config, db) => ({
                                 })
                                 /* istanbul ignore next */
                                 .catch((err) => {
-                                    console.log('🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err', err)
                                     /* istanbul ignore next */
                                     reject(err)
                                 })
                         )
                     })
                     .catch((err) => {
-                        console.log('🚀 ~ file: model.js ~ line 213 ~ returndb.transaction ~ err', err)
                         reject(err)
                         // transaction.rollback();
                     })
             } catch (error) {
-                console.log('🚀 ~ file: model.js ~ line 197 ~ db.transaction ~ error', error)
+                logger.error('cards model',err)
             }
         }),
 
@@ -252,11 +249,9 @@ const cards = (config, db) => ({
                         resolve(data)
                     })
                     .catch((err) => {
-                        console.log('🚀 ~ file: model.js:271 ~ newPromise ~ err', err)
                         reject(err)
                     })
             } catch (error) {
-                console.log('🚀 ~ file: model.js:263 ~ db.transaction ~ error', error)
                 reject(error)
                 // transaction.rollback();
             }
@@ -302,7 +297,6 @@ const cards = (config, db) => ({
                     resolve(data)
                 })
                 .catch((err) => {
-                    console.log('🚀 ~ file: model.js ~ line 81 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })

@@ -9,7 +9,7 @@ const db = require('../utils/db')
 const app = require('lambda-api')()
 const Cap = require('../utils/cap')
 const AWS = require('aws-sdk')
-
+const logger = require('../utils/logger')
 AWS.config.region = config.AWS_REGION
 const lambda = new AWS.Lambda()
 
@@ -37,7 +37,7 @@ app.get('subscriptions/count', (req, res, next) => {
             })
         )
         .catch((err) => {
-            console.log('🚀 ~ file: subscription-main.js:37 ~ err', err)
+            logger.error('/subscriptions/count',err);
             return res.status(500).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
@@ -63,7 +63,7 @@ app.post('subscriptions/add-subscriber', (req, res, next) => {
                 })
         })
         .catch((err) => {
-            console.log('🚀 ~ file: subscription-main.js:37 ~ err', err)
+            logger.error('/subscriptions/add-subscriber',err);
             return res.status(500).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
@@ -73,12 +73,11 @@ app.delete('subscriptions/delete-subscriber', (req, res, next) => {
     if (!req?.body?.phonenumber) {
         return res.status(400).json({ message: 'Bad Request , whatsapp number is needed' })
     }
-    console.log('Coming inside delete method', req?.body?.phonenumber)
     return subscriptions(config, db)
         .deleteSubscription(req?.body?.phonenumber)
         .then((data) => res.status(200).json({ data: 'Successfully deleted' }))
         .catch((err) => {
-            console.log('🚀 ~ file: subscription-main.js:37 ~ err', err)
+            logger.error('/subscriptions/delete-subscriber',err);
             return res.status(500).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
@@ -101,15 +100,15 @@ function invokeNotify(body) {
         try {
             lambda.invoke(params, (err) => {
                 if (err) {
-                    console.log('Err', err)
+                    logger.error('lambda invoke Err', err)
                     reject(err)
                 } else {
                     resolve('Lambda invoked')
-                    console.log('Lambda invoked')
+                    logger.info('Lambda invoked')
                 }
             })
         } catch (err) {
-            console.log('error: ', err)
+            logger.error('invoke notify error: ', err)
         }
     })
 }
@@ -121,10 +120,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

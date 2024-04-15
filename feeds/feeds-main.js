@@ -7,6 +7,7 @@ const feeds = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
+const logger = require('../utils/logger')
 
 /**
  * Methods to get  reports from database
@@ -25,7 +26,7 @@ app.post('feeds/qlue', (req, res) =>
         .addQlueReport(req.body)
         .then((data) => res.json(data))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            logger.error('/feeds/qlue',err)
         })
 )
 
@@ -37,7 +38,7 @@ app.post('feeds/detik', (req, res) =>
         .addDetikReport(req.body)
         .then((data) => res.json(data))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 41 ~ err', err)
+            logger.error('/feeds/detik',err)
         })
 )
 
@@ -48,10 +49,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

@@ -11,7 +11,7 @@ const db = require('../utils/db')
 const app = require('lambda-api')()
 const archives = require('./archive/model')
 const timeseries = require('./timeseries/model')
-
+const logger = require('../utils/logger')
 const { cacheResponse, handleGeoCapResponse, handleGeoResponse } = require('../utils/utils')
 const Cap = require('../utils/cap')
 /**
@@ -34,12 +34,11 @@ app.get('reports', cacheResponse('1 minute'), (req, res) =>
         .all(req.query.timeperiod, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => {
             // Sentry.setTag("invocation-source", "website");
-            // console.log("🚀 ~ file: reports-main.js ~ line 32 ~ .then ~ data", data);
             return handleGeoCapResponse(data, req, res, cap)
         })
         .catch((err) => {
             // Sentry.captureException(err);
-            console.log('🚀 ~ file: reports-main.js ~ line 29 ~ err', err)
+            logger.err('/reports', err)
             res.status(400).json({
                 statusCode: 400,
                 message: 'Error while processing request',
@@ -56,7 +55,7 @@ app.get('reports/:id', cacheResponse('1 minute'), (req, res) =>
         .byId(req.params.id)
         .then((data) => handleGeoResponse(data, req, res))
         .catch((err) => {
-            console.log('🚀 ~ file: reports-main.js ~ line 41 ~ err', err)
+            logger.error('/reports/:id', err)
             /* istanbul ignore next */
             // logger.error(err);
             /* istanbul ignore next */
@@ -84,7 +83,7 @@ app.patch('reports/:id', (req, res) => {
                 .end()
         })
         .catch((err) => {
-            console.log('🚀 ~ file: reports-main.js ~ line 58 ~ err', err)
+            logger.error('/reports/:id patch', err)
             // logger.error(err);
             // next(err);
         })
@@ -107,7 +106,7 @@ app.patch('reports/:id/flag', (req, res) => {
             })
         })
         .catch((err) => {
-            console.log('🚀 ~ file: reports-main.js ~ line 76 ~ err', err)
+            logger.error('/reports/:id/flag patch', err)
             /* istanbul ignore next */
             // logger.error(err);
             /* istanbul ignore next */
@@ -120,7 +119,7 @@ app.get('reports/archive', async (req, res) => {
         .all(req.query.start, req.query.end, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => handleGeoCapResponse(data, req, res, cap))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 46 ~ app.get ~ err', err)
+            logger.error('/reports/archive', err)
             return res.status(400).json({
                 statusCode: 400,
                 error: 'Could not process the Request',
@@ -134,7 +133,7 @@ app.get('reports/timeseries', cacheResponse('1 minute'), (req, res) => {
         .count(req.query.start, req.query.end, req.query.admin)
         .then((data) => res.status(200).json({ statusCode: 200, result: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 46 ~ app.get ~ err', err)
+            logger.error('/reports/timeseries', err)
             res.status(400).json({
                 statusCode: 400,
                 result: 'Unable to process the request',
@@ -150,10 +149,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error(' Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

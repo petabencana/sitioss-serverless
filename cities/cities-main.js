@@ -7,6 +7,7 @@ const cities = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
+const logger = require('../utils/logger')
 
 const {
     cacheResponse,
@@ -31,7 +32,7 @@ app.get('cities', cacheResponse('1 day'), (req, res) => {
         .all()
         .then((data) => handleGeoResponse(data, req, res))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 26 ~ err', err)
+            logger.error('/cities',err)
         })
 })
 
@@ -40,7 +41,7 @@ app.get('cities/bounds', cacheResponse('1 day'), (req, res) =>
         .byID(req.query.admin)
         .then((data) => checkIfPointInGeometry(data, req, res))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 39 ~ err', err)
+            logger.error('/cities/bounds',err)
         })
 )
 
@@ -51,10 +52,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

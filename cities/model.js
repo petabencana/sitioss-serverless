@@ -25,10 +25,6 @@ const cities = (config, db) => ({
                 type: QueryTypes.SELECT,
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 28 ~ .then ~ data',
-                        data
-                    )
                     resolve(data)
                 })
                 /* istanbul ignore next */
@@ -51,10 +47,6 @@ const cities = (config, db) => ({
                 bind: [admin],
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 50 ~ .then ~ data',
-                        data
-                    )
                     resolve(data)
                 })
                 /* istanbul ignore next */

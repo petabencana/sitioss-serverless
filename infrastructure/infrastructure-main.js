@@ -7,7 +7,7 @@ const infrastructure = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
-
+const logger = require('../utils/logger')
 const { cacheResponse, handleGeoResponse } = require('../utils/utils')
 
 /**
@@ -31,7 +31,7 @@ app.get(
             .all(req.query.admin, req.params.type)
             .then((data) => handleGeoResponse(data, req, res))
             .catch((err) => {
-                console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+                logger.error('infrastructure/:type',err);
                 /* istanbul ignore next */
             })
 )
@@ -43,10 +43,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good

@@ -30,12 +30,10 @@ const subscriptions = (config, db, logger) => ({
                 bind: [start, end, city],
             })
                 .then((data) => {
-                    console.log('🚀 ~ returnnewPromise ~ data:', data)
                     resolve(data)
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log('errror here', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -127,7 +125,6 @@ const subscriptions = (config, db, logger) => ({
                         resolve(data)
                     })
                     .catch((err) => {
-                        console.log('Error while inserting', err)
                         reject(err)
                     })
             })
@@ -151,7 +148,6 @@ const subscriptions = (config, db, logger) => ({
                             resolve(data)
                         })
                         .catch((err) => {
-                            console.log('Error while inserting', err)
                             reject(err)
                         })
                 })

@@ -25,7 +25,6 @@ const regions = (config, db) => ({
                 type: QueryTypes.SELECT,
             })
                 .then((data) => {
-                    console.log('data coming', data)
                     resolve(data)
                 })
                 /* istanbul ignore next */

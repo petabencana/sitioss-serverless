@@ -85,10 +85,6 @@ const floods = (config, db) => ({
                 bind: [admin, minimumState, parent],
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 88 ~ .then ~ data',
-                        data
-                    )
                     resolve(data)
                 })
                 /* istanbul ignore next */
@@ -185,26 +181,14 @@ const floods = (config, db) => ({
                         })
                     }
                 } catch (error) {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 197 ~ db.transaction ~ error',
-                        error
-                    )
                     reject(error)
                     transaction.rollback()
                 }
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 203 ~ db.transaction ~ data',
-                        data
-                    )
                     resolve(data)
                 })
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 210 ~ newPromise ~ err',
-                        err
-                    )
                     reject(err)
                 })
         }),
@@ -243,26 +227,14 @@ const floods = (config, db) => ({
                         })
                     }
                 } catch (error) {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 197 ~ db.transaction ~ error',
-                        error
-                    )
                     reject(error)
                     transaction.rollback()
                 }
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 203 ~ db.transaction ~ data',
-                        data
-                    )
                     resolve(data)
                 })
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 210 ~ newPromise ~ err',
-                        err
-                    )
                     reject(err)
                 })
         }),

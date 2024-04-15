@@ -7,7 +7,7 @@ const needs = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
-
+const logger = require('../utils/logger')
 const { handleGeoResponse } = require('../utils/utils')
 
 /**
@@ -28,7 +28,7 @@ app.get('needs/', (req, res) =>
         .all()
         .then((data) => handleGeoResponse(data, req, res))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            logger.error('/needs',err)
             return res.status(400).json({ error: 'Error while fetching data' })
             /* istanbul ignore next */
         })
@@ -39,7 +39,7 @@ app.get('needs/need', (req, res) =>
         .getByNeedId(req.query)
         .then((data) => res.json(data))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            logger.error('/needs/need',err)
             return res.status(400).json({ error: 'Error while fetching data' })
             /* istanbul ignore next */
         })
@@ -50,7 +50,7 @@ app.patch('needs/need/:id', (req, res) =>
         .updateNeed(req.body, req.params)
         .then((data) => res.json(data))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            logger.error('/needs/need/:id',err)
             return res.status(400).json({ error: 'Error while fetching data' })
             /* istanbul ignore next */
         })
@@ -61,7 +61,7 @@ app.post('needs/create-need', (req, res) =>
         .addNewNeedReport(req.body)
         .then((data) => res.status(200).json({ data: data }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            logger.error('/needs/create-need',err)
             return res.status(400).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
@@ -72,7 +72,7 @@ app.post('needs/update-giver', (req, res) =>
         .addGiverReport(req.body)
         .then((data) => res.status(200).json({ message: 'Giver details updated successfully' }))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            logger.error('/needs/update-giver',err)
             return res.status(400).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
@@ -85,10 +85,10 @@ module.exports.main = async (event, context, callback) => {
     await db
         .authenticate()
         .then(() => {
-            console.info('INFO - Database connected.')
+            logger.info('Database connected.')
         })
         .catch((err) => {
-            console.error('ERROR - Unable to connect to the database:', err)
+            logger.error('Unable to connect to the database:', err)
         })
     // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
     // won't quit until all DB connections are closed, which is not good
