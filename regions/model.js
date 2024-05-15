@@ -41,7 +41,7 @@ const regions = (config, db) => ({
             // Setup query
             const query = `SELECT region, region_code , ST_AsBinary(the_geom)
       FROM ${config.TABLE_REGIONS}
-      where gid=$1 `
+      where region_code=$1 `
 
             // Execute
             db.query(query, {

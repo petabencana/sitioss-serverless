@@ -244,7 +244,8 @@ function getSubscriptions() {
     })
 }
 
-function addSubscriptionLog(subscription, region) {
+function addSubscriptionLog(subscription, notificationMedium, region) {
+    subscription.notificationMedium = notificationMedium
     return new Promise((resolve, reject) => {
         return subscriptions(config, db)
             .addSubscriptionLog(subscription, region)
@@ -264,9 +265,9 @@ function getSubscriptionLog(userId, region) {
     })
 }
 
-function isCityInRegionCodes(reportArray, targetCity) {
+function isCityInRegionCodes(reportArray, regionCode) {
     for (const report of reportArray) {
-        if (report.city === targetCity && report.count >= 3) {
+        if (report.regionCode === regionCode && report.count >= 3) {
             return true
         }
     }
@@ -277,29 +278,18 @@ function canTriggerNotification(data) {
     try {
         const instanceRegionCode = data.instanceRegionCode
         const reportId = data.reportId
-        const regionCodeOfReportCreated = data.regionCode
         return cards(config, db)
             .reports()
             .then(async (reportData) => {
                 const transformedReportCounts = filterReports(reportData)
-                const filterRegionCodeAndCount = transformedReportCounts.filter(
-                    (report) => report.regionCode === regionCodeOfReportCreated && report.count >= 3
-                )
-                const filterByCityName = filterRegionCodeAndCount.filter(
-                    (report) => report.regionCode === regionCodeOfReportCreated
-                )
-                const cityName = filterByCityName[0].city
-
-                if (filterRegionCodeAndCount.length > 0) {
-                    await invokeSNSTopicLambda({ cityName, instanceRegionCode, reportId })
-                }
 
                 const subscriptionData = await getSubscriptions()
                 const filteredSubscriptionData = subscriptionData.filter((entry) =>
                     entry.regionCodes.some((code) =>
-                        transformedReportCounts.some((item) => item.city === code && item.count >= 3)
+                        transformedReportCounts.some((item) => item.regionCode === code && item.count >= 3)
                     )
                 )
+                console.log(transformedReportCounts, subscriptionData, filteredSubscriptionData)
 
                 if (filteredSubscriptionData.length !== 0) {
                     // Using Promise.all to handle multiple notifications concurrently
@@ -312,14 +302,14 @@ function canTriggerNotification(data) {
                             body.card.username = subscription.userId
                             body.card.language = subscription.languageCode
                             body.card.reports = transformedReportCounts
-                            body.card.network = 'whatsapp'
+                            body.card.network = subscription.network
                             body.instanceRegionCode = instanceRegionCode
                             body.reportId = reportId
-
+                            // Send notification only for the region for which the report is created on the map and not for all the regions subscribed
                             const matchingCity = isCityInRegionCodes(transformedReportCounts, regionCode)
                             if (subscriptionLogData.length === 0 && matchingCity) {
                                 return invokeNotify(body).then(async () => {
-                                    return await addSubscriptionLog(subscription, regionCode)
+                                    return await addSubscriptionLog(subscription, subscription.network, regionCode)
                                 })
                             }
                             return Promise.resolve()
@@ -346,6 +336,7 @@ async function createReport(card, req, res) {
         .submitReport(card, req.body)
         .then(async (data) => {
             data.card = card
+            data.card.notifyType = 'thank-you'
             try {
                 if (data.card.network !== 'website') {
                     await invokeNotify(data)

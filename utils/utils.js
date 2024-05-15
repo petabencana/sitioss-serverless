@@ -113,7 +113,7 @@ const filterReports = (data) => {
     data.forEach((obj) => {
         if (!obj.is_training) {
             const regionCode = obj.tags.region_code
-            const city = obj.tags.city
+            const region = obj.tags.region
             const disasterType = obj.disaster_type
             const reportData = obj.report_data
             const disasterSeverity = getDisasterSeverity(disasterType, reportData)
@@ -122,9 +122,9 @@ const filterReports = (data) => {
             )
             if (existingRegion) {
                 existingRegion.count = disasterSeverity === 'high' ? 3 : existingRegion.count + 1
-                // Set city only if it's not already present
-                if (city && !existingRegion.city) {
-                    existingRegion.city = city
+                // Set region only if it's not already present
+                if (region && !existingRegion.city) {
+                    existingRegion.region = region
                 }
             } else {
                 // If severity is high, set count to 3
@@ -133,7 +133,7 @@ const filterReports = (data) => {
                     regionCode,
                     count,
                     disasterType,
-                    city: city || '',
+                    region: region || '',
                 })
             }
         }

@@ -66,7 +66,7 @@ const subscriptions = (config, db, logger) => ({
     fetchSubscriptions: () =>
         new Promise((resolve, reject) => {
             // Setup query
-            const query = `SELECT s.user_id, s.language_code, ARRAY_AGG(wr.region_code) AS region_codes FROM ${TABLE_SUBSCRIPTIONS} s INNER JOIN ${TABLE_SUBSCRIPTIONS_REGIONS} wr ON s.user_id = wr.subscription_id GROUP BY s.user_id, s.language_code;`
+            const query = `SELECT s.user_id, s.language_code, s.network, ARRAY_AGG(wr.region_code) AS region_codes FROM ${TABLE_SUBSCRIPTIONS} s INNER JOIN ${TABLE_SUBSCRIPTIONS_REGIONS} wr ON s.user_id = wr.subscription_id GROUP BY s.user_id, s.language_code;`
 
             // Execute
             db.query(query, {
@@ -77,6 +77,7 @@ const subscriptions = (config, db, logger) => ({
                         ...data.map((row) => ({
                             userId: row.user_id,
                             languageCode: row.language_code,
+                            network: row.network,
                             regionCodes: row.region_codes,
                         })),
                     ]
@@ -113,6 +114,8 @@ const subscriptions = (config, db, logger) => ({
         const userId = body.userId
         const regionCodes = body.regions
         const language = body.language
+        const network = body.network
+
         const subscriptionAvailable = await subscriptions(config, db, logger).fetchByUserId(userId)
         if (subscriptionAvailable >= 1) {
             return new Promise((resolve, reject) => {
@@ -133,11 +136,11 @@ const subscriptions = (config, db, logger) => ({
             })
         }
         return new Promise((resolve, reject) => {
-            const query = `INSERT INTO  ${config.TABLE_SUBSCRIPTIONS} (user_id , is_sent , language_code) VALUES (? , ? , ?) RETURNING user_id`
+            const query = `INSERT INTO  ${config.TABLE_SUBSCRIPTIONS} (user_id , language_code , network) VALUES (? , ? , ?) RETURNING user_id`
             // Execute
             db.query(query, {
                 type: QueryTypes.INSERT,
-                replacements: [userId, false, language],
+                replacements: [userId, language, network],
             })
                 .then((data) => {
                     const regionsQuery = `INSERT INTO ${config.TABLE_SUBSCRIPTIONS_REGIONS}
@@ -169,7 +172,7 @@ const subscriptions = (config, db, logger) => ({
             // Execute
             db.query(query, {
                 type: QueryTypes.INSERT,
-                bind: [new Date().toISOString(), body?.userId, 'whatsapp', region],
+                bind: [new Date().toISOString(), body?.userId, body?.notificationMedium, region],
             })
                 .then((data) => {
                     resolve(data)
