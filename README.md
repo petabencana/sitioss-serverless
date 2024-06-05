@@ -6,18 +6,31 @@ API Server for CogniCity
 
 This is the NodeJS serverless function which is deployed uses lambda and AWS API Gateway to route the requests , which runs the CogniCity Data API used by Urban Risk Map instances, such as [PetaBencana.id](https://petabencana.id) site.  
 
-### Run
+### Prerequisite
+* Use NVM to switch to node and NPM versions specified in package.json for production.
+* Install dependencies
+    * Run `npm install`
+* Node version = 16x
+* Install serverless globally
 
-1. Install requirements from the provided `package.json` by doing `npm install`.
+### Set up Database
+* To set up a local database follow the [Cognicity-schema](https://github.com/petabencana/cognicity-schema) repo.
 
-2. Copy the `env.sample` file to a local `.env` and fill-in the required parameters. This local file will be ignored by Git and so should be secret safe. Further details on configuration are described below.
+### Steps to run the App
 
-3. To run a local development instance of the server do `serverless offline start --param="service={NAME OF THE SERVICE}"`
-4. Also make sure to check for the Comments in the following files which needs to be commented out for running it locally
+1. Copy the `env.sample` file to a local `.env` and fill-in the required parameters. This local file will be ignored by Git and so should be secret safe. Further details on configuration are described below.
+
+2. Also make sure to check for the Comments in the following files which needs to be commented out for running it locally
 
 * `serverless.yml`
 * `utils/db.js`
 * `service.yml in the service you would like to run`
+
+3. To run a local development instance of the server do 
+    * `serverless offline start --param="service={NAME OF THE SERVICE}"`
+
+4. To run the serverless offline in two different ports then add the httpPort and lambdaPort parameters.
+    * `serverless offline start --param="service={NAME OF THE SERVICE}" --httpPort 3001 --lambdaPort 3003`
 
 ### Configuration
 Server configuration parameters are stored in a configuration file which is parsed by index.js on startup. Local configuration parameters are imported from the `dev.env.yml` into `src/config.js`.  See `config.js` for full details example configuration. Any variable not defined in `dev.env.yml` will pickup the default value below (also see `config.js`)—note that local environment variables will override both `.env` and `config.js`.  The following environment variables are currently supported by the configurtion:
@@ -95,14 +108,6 @@ Create a dev/stage/prod.env.yml file , the database configurations are picked up
 * `TABLE_REM_STATUS`: Postgres table for current flood states from REM
 * `TABLE_REM_STATUS_LOG`: Postgres table for REM log
 * `TABLE_REPORTS`: Postgres table for reports
-
-
-
-### Package management
-Before deployment:
-* Use NVM to switch to node and NPM versions specified in package.json for production
-* Run npm install
-* Commit changes to package-lock.json
 
 ### Release
 The release procedure is as follows:
