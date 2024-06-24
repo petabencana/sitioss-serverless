@@ -9,7 +9,6 @@ const reports = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
-const archives = require('./archive/model')
 const timeseries = require('./timeseries/model')
 
 const { cacheResponse, handleGeoCapResponse, handleGeoResponse } = require('../utils/utils')
@@ -115,19 +114,6 @@ app.patch('reports/:id/flag', (req, res) => {
         })
 })
 
-app.get('reports/archive', async (req, res) => {
-    return archives(config, db)
-        .all(req.query.start, req.query.end, req.query.admin, req.query.disaster, req.query.training)
-        .then((data) => handleGeoCapResponse(data, req, res, cap))
-        .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 46 ~ app.get ~ err', err)
-            return res.status(400).json({
-                statusCode: 400,
-                error: 'Could not process the Request',
-            })
-            /* istanbul ignore next */
-        })
-})
 
 app.get('reports/timeseries', cacheResponse('1 minute'), (req, res) => {
     return timeseries(config, db)
