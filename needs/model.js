@@ -1,8 +1,11 @@
+/* eslint-disable camelcase */
+'use strict';
 /**
  * CogniCity Server /infrastructure data model
  * @module src/api/needs/model
  **/
-const { QueryTypes } = require('@sequelize/core')
+const { QueryTypes } = require('@sequelize/core');
+const { TABLE_COGNICITY_PARTNERS, TABLE_LOGISTICS_GIVER_DETAILS } = require('../config');
 /**
  * Methods to get infrastructure layers from database
  * @alias module:src/api/needs/model
@@ -16,9 +19,26 @@ const needs = (config, db) => ({
     all: () =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT ${config.TABLE_LOGISTICS_NEEDS}.id, ${config.TABLE_LOGISTICS_NEEDS}.created_date ,  ${config.TABLE_LOGISTICS_NEEDS}.need_user_id , ${config.TABLE_LOGISTICS_NEEDS}.status , ${config.TABLE_LOGISTICS_NEEDS}.quantity_requested , ${config.TABLE_LOGISTICS_NEEDS}.item_requested , 
-			${config.TABLE_LOGISTICS_GIVER_DETAILS}.quantity_satisfied, ${config.TABLE_LOGISTICS_GIVER_DETAILS}.promised_date , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.promised_time , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.giver_id , ST_AsBinary(${config.TABLE_LOGISTICS_NEEDS}.the_geom)
-			FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} RIGHT JOIN  ${config.TABLE_LOGISTICS_NEEDS} ON ${config.TABLE_LOGISTICS_NEEDS}.id=${config.TABLE_LOGISTICS_GIVER_DETAILS}.need_id;`
+            const query = `SELECT 
+			nr.need_request_id,
+			nr.status,
+			nr.created_date,
+			ST_AsBinary(nr.the_geom),
+			ARRAY_AGG(nr.quantity_requested) AS all_quantities_requested,
+			ARRAY_AGG(nr.description) AS all_descriptions,
+			ARRAY_AGG(DISTINCT nr.item_requested) AS all_items_requested,
+			ARRAY_AGG(DISTINCT gd.item_satisfied) AS all_items_satisfied,
+			ARRAY_AGG(DISTINCT gd.promised_date) AS all_promised_dates,
+			ARRAY_AGG(nr.units) AS all_units,
+			COALESCE(SUM(CAST(gd.quantity_satisfied AS integer)), 0) AS total_quantity_satisfied
+		FROM 
+			${config.TABLE_LOGISTICS_NEEDS} nr
+		LEFT JOIN 
+			${config.TABLE_LOGISTICS_GIVER_DETAILS} gd ON gd.need_id = nr.id
+        WHERE nr.status NOT IN ('EXPIRED', 'SATISFIED')
+		GROUP BY 
+        nr.need_request_id, nr.status, nr.created_date , ST_AsBinary(nr.the_geom)
+		ORDER BY nr.created_date DESC;`
 
             // Execute
             db.query(query, {
@@ -37,14 +57,37 @@ const needs = (config, db) => ({
     getByNeedId: (value) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT ${config.TABLE_LOGISTICS_NEEDS}.id, ${config.TABLE_LOGISTICS_NEEDS}.need_user_id , ${config.TABLE_LOGISTICS_NEEDS}.quantity_requested  , ${config.TABLE_LOGISTICS_NEEDS}.need_language , ${config.TABLE_LOGISTICS_NEEDS}.item_requested , ${config.TABLE_LOGISTICS_NEEDS}.status , 
-			${config.TABLE_LOGISTICS_GIVER_DETAILS}.quantity_satisfied, ${config.TABLE_LOGISTICS_GIVER_DETAILS}.promised_date , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.promised_time , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.giver_id , ${config.TABLE_LOGISTICS_GIVER_DETAILS}.giver_language
-			FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} RIGHT JOIN  ${config.TABLE_LOGISTICS_NEEDS} ON ${config.TABLE_LOGISTICS_NEEDS}.id=${config.TABLE_LOGISTICS_GIVER_DETAILS}.need_id WHERE id = $1`
+            const query = `SELECT 
+			nd.id, 
+			nd.item_id, 
+			nd.need_request_id, 
+			nd.description,
+			nd.quantity_requested,
+			ST_X(nd.the_geom) AS longitude,
+			ST_Y(nd.the_geom) AS latitude,
+			COALESCE(SUM(CAST(gd.quantity_satisfied AS integer)), 0) AS total_quantity_satisfied
+		FROM 
+			${config.TABLE_LOGISTICS_NEEDS} nd
+		LEFT JOIN 
+			${config.TABLE_LOGISTICS_GIVER_DETAILS} gd
+			ON nd.id = gd.need_id 
+		WHERE 
+			nd.need_request_id = $1
+		GROUP BY 
+			nd.need_request_id,
+			nd.id,
+			nd.item_id,
+			nd.description,
+			nd.quantity_requested,
+			ST_X(nd.the_geom),
+			ST_Y(nd.the_geom);
+		`
+            const needRequestId = value?.requestId || null
 
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
-                bind: [value?.id],
+                bind: [needRequestId],
             })
                 .then((data) => {
                     resolve(data)
@@ -56,51 +99,110 @@ const needs = (config, db) => ({
                 })
         }),
 
-    addNewNeedReport: (body) => {
+    addNewNeedReport: (reports) => {
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
-            let queryForNeedReports = `INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} (status , quantity_requested , item_requested , need_language , need_user_id , the_geom)
-          VALUES (COALESCE($1,null) , COALESCE($2,null) , COALESCE($3,null) , COALESCE($4,null) , (select user_id from logistics.user_table where user_id=$5 AND user_type='need') , ST_SetSRID(ST_Point($6,$7),4326));`
+            let queryForNeedReports = `INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} ("status", "quantity_requested", "item_requested", "need_language", "units", "item_id", "description", "need_request_id",  "the_geom")
+				VALUES `
+        
+            const needValues = []
+            const needPlaceholders = []
+            let index = 1
 
-            const userId = await checkIfUserExists(db, body)
+            const userId = reports[0].user_id // As it is always one user who would be requesting for multiple items
 
-            // Execute
-            db.query(queryForNeedReports, {
-                type: QueryTypes.INSERT,
-                bind: [
-                    body?.status || null,
-                    body?.quantity_requested || null,
-                    body?.item_requested || null,
-                    body?.need_language || null,
-                    userId,
-                    body?.lng || null,
-                    body?.lat || null,
-                ],
-            })
-                .then((data) => {
-                    resolve(data)
+            for (const report of reports) {
+                needValues.push(
+                    report.status,
+                    report.quantity_requested,
+                    report.item_requested,
+                    report.need_language,
+                    report.units,
+                    report.item_id,
+                    report.description || null,
+                    report.need_request_id,
+                    report.lng,
+                    report.lat
+                )
+                needPlaceholders.push(
+                    `($${index}, $${index + 1}, $${index + 2}, $${index + 3}, $${index + 4}, $${index + 5}, 
+                    COALESCE($${index + 6},null), $${index + 7},ST_SetSRID(ST_Point($${index + 8}, $${index + 9}), 4326))`
+                )
+                index += 10 // increment index by 11 for each report object
+            }
+
+            queryForNeedReports += `${needPlaceholders.join(', ')  } RETURNING id, need_language`;
+
+            try {
+                const result = await db.query(queryForNeedReports, {
+                    type: QueryTypes.INSERT,
+                    bind: needValues,
                 })
-                .catch((err) => {
-                    console.log('Data failed to insert in need reports', err)
-                    reject(err)
-                })
+
+                const insertedRows = result[0];
+                const insertedData = insertedRows.map(row => ({ id: row.id, need_language: row.need_language }));
+                // Prepare the query and values for the associations table
+                let queryForAssociations = `INSERT INTO ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} ("need_id", "user_id" , "need_language") VALUES `;
+                const associationPlaceholders = [];
+                const associationValues = [];
+                let associationIndex = 1;
+                insertedData.forEach((data) => {
+                    associationValues.push(data.id, userId , data.need_language);
+                    associationPlaceholders.push(`($${associationIndex}, $${associationIndex + 1}, $${associationIndex + 2})`);
+                    associationIndex += 3
+                });
+
+                queryForAssociations += associationPlaceholders.join(', ');
+
+                // Insert into need_user_associations table
+                await db.query(queryForAssociations, {
+                    type: QueryTypes.INSERT,
+                    bind: associationValues,
+                });
+
+                resolve(result)
+            } catch (err) {
+                console.log('Data failed to insert in need reports', err)
+                reject(err)
+            }
         })
     },
 
     updateNeed: (body, value) =>
         new Promise((resolve, reject) => {
-            const status = body?.status || null
-            const need_user_id = body?.need_user_id || null
-            const quantity_requested = body?.quantity_requested || null
-            const item_requested = body?.item_requested || null
-            // Setup query
-            let query = `UPDATE  ${config.TABLE_LOGISTICS_NEEDS} SET  status = COALESCE($1,status) , need_user_id = COALESCE($2,need_user_id) , quantity_requested = COALESCE($3,quantity_requested) , item_requested = COALESCE($4,item_requested) WHERE id = ${value.id}`
-
-            // Execute
+            const status = body?.status || null;
+            const quantity_requested = body?.quantity_requested || null;
+            const item_requested = body?.item_requested || null;
+            const useCurrentDate = body?.current_date === 'current';
+            
+            // Initialize base query and parameters array
+            let query = `UPDATE ${config.TABLE_LOGISTICS_NEEDS} SET 
+              status = COALESCE($1, status), 
+              quantity_requested = COALESCE($2, quantity_requested), 
+              item_requested = COALESCE($3, item_requested)`;
+            
+            // Add the current date handling
+            if (useCurrentDate) {
+              query += ', created_date = CURRENT_DATE';
+            } else {
+              query += ', created_date = COALESCE($4, created_date)';
+            }
+            
+            // Add the WHERE clause
+            query += ' WHERE id = $5';
+            
+            // Initialize parameters array
+            const params = [status, quantity_requested, item_requested];
+            if (!useCurrentDate) {
+              params.push(body?.current_date || null); // Push the current_date only if not using CURRENT_DATE
+            }
+            params.push(value.id); // Add the id to the parameters
+            
+            // Execute the query
             db.query(query, {
-                type: QueryTypes.UPDATE,
-                bind: [status, need_user_id, quantity_requested, item_requested],
-            })
-                .then((data) => {
+              type: QueryTypes.UPDATE,
+              bind: params,
+            }).then((data) => {
                     resolve(data)
                 })
                 /* istanbul ignore next */
@@ -110,50 +212,84 @@ const needs = (config, db) => ({
                 })
         }),
 
-    addGiverReport: (body) => {
+    rescheduleDeliveryDate: (body , value) => {
+        return new Promise((resolve, reject) => {
+            const DayMap = {
+                one: '1 day',
+                two: '2 days',
+            }
+            // Setup query
+            const query = `UPDATE ${config.TABLE_LOGISTICS_GIVER_DETAILS}
+            SET promised_date = (DATE(promised_date) + INTERVAL '${DayMap[body.interval]}')::date , date_extended = TRUE WHERE need_id = $1 RETURNING promised_date;`
+            // Execute
+            db.query(query, {
+                type: QueryTypes.UPDATE,
+                bind: [value.id],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                /* istanbul ignore next */
+                .catch((err) => {
+                    /* istanbul ignore next */
+                    reject(err)
+                })
+        })
+    },
+
+    // eslint-disable-next-line consistent-return
+    addGiverReport: (reports) => {
         try {
+            // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
                 let queryForGiverDetails = `INSERT INTO ${config.TABLE_LOGISTICS_GIVER_DETAILS} (
 					quantity_satisfied,
+					item_satisfied,
 					promised_date,
 					promised_time,
 					giver_language,
 					need_id,
+                    delivery_code,
 					giver_id
 				)
-				VALUES (
-					COALESCE($1, null),
-					COALESCE($2, null),
-					COALESCE($3, null),
-					COALESCE($4, null),
-					COALESCE($5::integer, null),
-					(
-						SELECT user_id
-						FROM logistics.user_table
-						WHERE user_id = $6
-							AND user_type = 'giver'
-					)
-				);`
+				VALUES `
+                const values = []
+                const placeholders = []
+                let index = 1
 
-                const userId = await checkIfUserExists(db, body)
-                console.log('What is the user id', userId)
+                const giverUserId = reports[0].user_id // As it is always one user who would be requesting for multiple items
+
+                for (const report of reports) {
+                    values.push(
+                        report.quantity_satisfied,
+                        report.item_satisfied,
+                        report.promised_date,
+                        report.promised_time,
+                        report.giver_language,
+                        report.need_id,
+                        report.delivery_code,
+                        giverUserId
+                    )
+                    placeholders.push(
+                        `($${index}, $${index + 1}, $${index + 2}, $${index + 3}, $${index + 4}, $${index + 5} ,$${index + 6}, $${index + 7})`
+                    )
+                    index += 8 // increment index by 8 for each report object
+                }
+
+                queryForGiverDetails += placeholders.join(', ')
                 // Execute
                 db.query(queryForGiverDetails, {
                     type: QueryTypes.INSERT,
-                    bind: [
-                        body?.quantity_satisfied || null,
-                        body?.promised_date || null,
-                        body?.promised_time || null,
-                        body?.giver_language || null,
-                        body?.need_id,
-                        userId,
-                    ],
+                    bind: values,
                 })
                     .then((data) => {
                         resolve(data)
                     })
                     .catch((err) => {
-                        console.log('Data failed to insert in need reports', err)
+                        console.log(
+                            'Data failed to insert in need reports',
+                            err
+                        )
                         reject(err)
                     })
             })
@@ -161,53 +297,157 @@ const needs = (config, db) => ({
             console.log('Error inserting', err)
         }
     },
-})
 
-const checkIfUserExists = async (db, body) => {
-    let [{ user_id }] = await queryUserId(db, body)
-    let userId
-    if (user_id?.length > 0) {
-        userId = body.user_id
-    } else {
-        userId = await addUser(db, body)
+     queryUserIdByNeedId : (id) => {
+        return new Promise((resolve, reject) => {
+            const query = `SELECT * FROM ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} WHERE need_id=$1;`
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [id],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
+    },
+
+    queryGiverIdByNeedId : (id) => {
+        return new Promise((resolve, reject) => {
+            const query = `SELECT * FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} WHERE need_id=$1;`
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [id],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
+    },
+
+    getItems : (params) => {
+        return new Promise((resolve, reject) => {
+        const IntervalMap = {
+            today: 'CURRENT_DATE',
+            yesterday: '(CURRENT_DATE - INTERVAL \'1 day\')',
+            expired: '(CURRENT_DATE - INTERVAL \'2 day\')'
+        };
+        const query = `SELECT 
+        gd.giver_id,
+        gd.giver_language,
+        gd.date_extended,
+        ARRAY_AGG(DISTINCT gd.item_satisfied) AS all_items_satisfied,
+        ARRAY_AGG(DISTINCT nr.user_id) AS need_user_id,
+        ARRAY_AGG(DISTINCT nr.need_id) AS id,
+        ARRAY_AGG(DISTINCT nr.need_language) AS need_language
+		FROM 
+		${config.TABLE_LOGISTICS_GIVER_DETAILS} gd
+		LEFT JOIN 
+        ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} nr ON nr.need_id = gd.need_id
+		WHERE DATE(promised_date) = ${IntervalMap[params.interval]}
+        GROUP BY gd.giver_id , gd.giver_language,  gd.date_extended;`
+
+            db.query(query, {
+                type: QueryTypes.SELECT,
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
+    },
+
+    getExpiredNeeds : () => {
+        return new Promise((resolve, reject) => {
+        const query = `SELECT 
+        ARRAY_AGG(DISTINCT nr.id) AS need_id,
+        ARRAY_AGG(DISTINCT na.user_id) AS need_user_id,
+        ARRAY_AGG(DISTINCT na.need_language) AS need_language
+		FROM 
+        ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} na
+		LEFT JOIN 
+        ${config.TABLE_LOGISTICS_NEEDS} nr ON nr.id = na.need_id
+		WHERE DATE(created_date) = CURRENT_DATE - INTERVAL '5 day';`
+
+            db.query(query, {
+                type: QueryTypes.SELECT,
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
+    },
+
+    getDeliveriesByGiverId: (requestQuery) => {
+        return new Promise((resolve, reject) => {
+            const giverId = `+${requestQuery.giverId}`
+            const deliveryCode = `${requestQuery.code}`
+            const query = `SELECT * FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} WHERE giver_id = $1 AND delivery_code = $2;`
+    
+                db.query(query, {
+                    type: QueryTypes.SELECT,
+                    bind:[giverId , deliveryCode]
+                })
+                    .then((data) => {
+                        console.log('🚀 ~ .then ~ data:', data)
+                        resolve(data)
+                    })
+                    .catch((err) => {
+                        console.log('error here', err)
+                        reject(err)
+                    })
+            })
+    },
+
+    getNeedIdsByUserId: (userId) => {
+        return new Promise((resolve, reject) => {
+            const query = `SELECT * FROM ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} WHERE user_id = $1;`
+    
+                db.query(query, {
+                    type: QueryTypes.SELECT,
+                    bind:[userId]
+                })
+                    .then((data) => {
+                        resolve(data)
+                    })
+                    .catch((err) => {
+                        console.log('error here', err)
+                        reject(err)
+                    })
+            })
+    },
+
+    deleteGiverDetailsById: (needId) => {
+        return new Promise((resolve, reject) => {
+            const query = `DELETE FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} WHERE need_id = $1;`
+    
+                db.query(query, {
+                    type: QueryTypes.DELETE,
+                    bind:[needId]
+                })
+                    .then((data) => {
+                        resolve(data)
+                    })
+                    .catch((err) => {
+                        console.log('error here', err)
+                        reject(err)
+                    })
+            })
     }
-    return userId
-}
-
-const addUser = (db, body) => {
-    return new Promise((resolve, reject) => {
-        let queryForUserTable = `INSERT INTO logistics.user_table (user_id , platform , user_type) VALUES (COALESCE($1,null) , COALESCE($2,null) , COALESCE($3,null)) RETURNING user_id;`
-        db.query(queryForUserTable, {
-            type: QueryTypes.INSERT,
-            bind: [body?.user_id || null, body?.platform || null, body?.user_type || null],
-        })
-            .then((data) => {
-                const [[{ user_id }]] = data
-                resolve(user_id)
-            })
-            .catch((err) => {
-                console.log('error here', err)
-                reject(err)
-            })
-    })
-}
-
-const queryUserId = (db, body) => {
-    return new Promise((resolve, reject) => {
-        let queryForUserTable = `SELECT user_id FROM logistics.user_table WHERE user_id=$1 AND user_type=$2;`
-        db.query(queryForUserTable, {
-            type: QueryTypes.SELECT,
-            bind: [body?.user_id, body?.user_type],
-        })
-            .then((data) => {
-                if (!data.length > 0) resolve([{ user_id: data }])
-                resolve(data)
-            })
-            .catch((err) => {
-                console.log('error here', err)
-                reject(err)
-            })
-    })
-}
+})
 
 module.exports = needs

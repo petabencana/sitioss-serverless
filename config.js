@@ -71,6 +71,7 @@ const config = {
     TABLE_SUBSCRIPTIONS_LOG: process.env.TABLE_SUBSCRIPTIONS_LOG || 'subscriptions.log',
     TABLE_REGIONS: process.env.TABLE_REGIONS || 'cognicity.local_cities',
     TABLE_LOGISTICS_NEEDS: process.env.TABLE_LOGISTICS_NEEDS || 'logistics.need_reports',
+    TABLE_LOGISTICS_NEED_ASSOCIATIONS: process.env.TABLE_LOGISTICS_NEED_ASSOCIATIONS || 'logistics.need_user_associations',
     TABLE_LOGISTICS_GIVER_DETAILS: process.env.TABLE_LOGISTICS_GIVER_DETAILS || 'logistics.giver_details',
 }
 
