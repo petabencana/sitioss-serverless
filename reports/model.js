@@ -1,3 +1,4 @@
+'use strict';
 /**
  * CogniCity Server /reports data model
  * @module src/api/reports/model
@@ -11,11 +12,12 @@
  * @return {Object} Query methods
  */
 const { QueryTypes } = require('@sequelize/core')
+
 const reports = (config, db) => ({
     all: (timeperiod, admin, disasterType, training) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT pkey, created_at, source,
+            const query = `SELECT pkey, created_at, source,
       status, url, image_url, disaster_type, is_training, report_data, tags, title, text,
       ST_AsBinary(the_geom), ${config.TABLE_COGNICITY_PARTNERS}.partner_code ,${config.TABLE_COGNICITY_PARTNERS}.partner_icon FROM ${config.TABLE_REPORTS}
       LEFT JOIN ${config.TABLE_COGNICITY_PARTNERS} ON ${config.TABLE_REPORTS}.partner_code=${config.TABLE_COGNICITY_PARTNERS}.partner_code
@@ -31,33 +33,33 @@ const reports = (config, db) => ({
       AND ($11::boolean is NULL OR is_training=$11::boolean)
       ORDER BY created_at DESC LIMIT $9`
 
-            let floodTimeWindow =
+            const floodTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.FLOOD_REPORTS_TIME_WINDOW)
-            let eqTimeWindow =
+                (timeperiod || config.FLOOD_REPORTS_TIME_WINDOW)
+            const eqTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.EQ_REPORTS_TIME_WINDOW)
-            let hazeTimeWindow =
+                (timeperiod || config.EQ_REPORTS_TIME_WINDOW)
+            const hazeTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.HAZE_REPORTS_TIME_WINDOW)
-            let windTimeWindow =
+                (timeperiod || config.HAZE_REPORTS_TIME_WINDOW)
+            const windTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.WIND_REPORTS_TIME_WINDOW)
-            let typhoonTimeWindow =
+                (timeperiod || config.WIND_REPORTS_TIME_WINDOW)
+            const typhoonTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.WIND_REPORTS_TIME_WINDOW)
-            let volcanoTimeWindow =
+                (timeperiod || config.WIND_REPORTS_TIME_WINDOW)
+            const volcanoTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.VOLCANO_REPORTS_TIME_WINDOW)
-            let fireTimeWindow =
+                (timeperiod || config.VOLCANO_REPORTS_TIME_WINDOW)
+            const fireTimeWindow =
                 Date.now() / 1000 -
-                (timeperiod ? timeperiod : config.FIRE_REPORTS_TIME_WINDOW)
-            let adminType = admin ? admin : null
-            let disaster = disasterType ? disasterType : null
-            let apiLimit = config.API_REPORTS_LIMIT
+                (timeperiod || config.FIRE_REPORTS_TIME_WINDOW)
+            const adminType = admin || null
+            const disaster = disasterType || null
+            const apiLimit = config.API_REPORTS_LIMIT
                 ? config.API_REPORTS_LIMIT
                 : null
-            let isTraining = training?.toString() ? training : null
+            const isTraining = training?.toString() ? training : null
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
@@ -93,7 +95,7 @@ const reports = (config, db) => ({
     byId: (id) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT pkey, created_at, source,
+            const query = `SELECT pkey, created_at, source,
       status, url, image_url, disaster_type, is_training, report_data, tags, title, text,
       the_geom FROM ${config.TABLE_REPORTS}
       WHERE pkey = ?`
@@ -121,13 +123,13 @@ const reports = (config, db) => ({
     addPoint: (id, body) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `UPDATE ${config.TABLE_REPORTS} SET report_data =
+            const query = `UPDATE ${config.TABLE_REPORTS} SET report_data =
     (SELECT COALESCE(report_data::jsonb, '{}') || ('{"points":' ||
       (COALESCE((report_data->>'points')::int, 0) + ?) || '}')::jsonb points
       FROM ${config.TABLE_REPORTS} WHERE pkey = ?) WHERE pkey = ?
       RETURNING report_data->>'points' as points`
 
-            let createQuery = `INSERT INTO ${config.TABLE_REPORTS_POINTS_LOG}
+            const createQuery = `INSERT INTO ${config.TABLE_REPORTS_POINTS_LOG}
       (report_id, value) VALUES (?, ?)`
             // Execute
             db.query(query, {
@@ -163,7 +165,7 @@ const reports = (config, db) => ({
     setFlag: (id, body) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `UPDATE ${config.TABLE_REPORTS} SET report_data = 
+            const query = `UPDATE ${config.TABLE_REPORTS} SET report_data = 
       (SELECT COALESCE(report_data::jsonb, '{}') || 
         ('{"flag":' || ? || '}')::jsonb flag
       FROM ${config.TABLE_REPORTS} WHERE pkey = ?) WHERE pkey = ?
