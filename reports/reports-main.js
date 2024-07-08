@@ -32,6 +32,7 @@ app.get('reports', cacheResponse('1 minute'), (req, res) =>
     reports(config, db)
         .all(req.query.timeperiod, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => {
+            if(req.query.timeperiod > 2592000) return res.status(400).json({status : 400 , message : 'Time period should be less than our equal to 2592000 (30 days)'})
             // Sentry.setTag("invocation-source", "website");
             // console.log("🚀 ~ file: reports-main.js ~ line 32 ~ .then ~ data", data);
             return handleGeoCapResponse(data, req, res, cap)
