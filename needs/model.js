@@ -24,12 +24,10 @@ const needs = (config, db) => ({
 			nr.status,
 			nr.created_date,
 			ST_AsBinary(nr.the_geom),
-			ARRAY_AGG(nr.quantity_requested) AS all_quantities_requested,
+            COALESCE(SUM(CAST(nr.quantity_requested AS integer)), 0) AS total_quantity_requested,
+            ARRAY_AGG(nr.quantity_requested) AS all_quantity_requested,
 			ARRAY_AGG(nr.description) AS all_descriptions,
-			ARRAY_AGG(DISTINCT nr.item_requested) AS all_items_requested,
-			ARRAY_AGG(DISTINCT gd.item_satisfied) AS all_items_satisfied,
-			ARRAY_AGG(DISTINCT gd.promised_date) AS all_promised_dates,
-			ARRAY_AGG(nr.units) AS all_units,
+			ARRAY_AGG(DISTINCT nr.item_id) AS all_item_ids,
 			COALESCE(SUM(CAST(gd.quantity_satisfied AS integer)), 0) AS total_quantity_satisfied
 		FROM 
 			${config.TABLE_LOGISTICS_NEEDS} nr

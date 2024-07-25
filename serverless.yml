@@ -8,6 +8,8 @@ useDotenv: true
 plugins:
     - serverless-domain-manager
     - serverless-offline
+    - serverless-deployment-bucket
+
 
 # Comment out this custom block if running locally
 custom:
@@ -35,6 +37,10 @@ provider:
                 - Effect: 'Allow'
                   Action: '*'
                   Resource: '*'
+    deploymentBucket:
+        blockPublicAccess: true
+        name: petabencana-serverless-api-deployment-bucket
+        serverSideEncryption: AES256
 # # load package from the --service option.
 #  Option should be the name of the relevant folder
 #  The service folder should have a service.yml file which contain related packages to include and functions to deploy

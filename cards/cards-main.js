@@ -75,6 +75,17 @@ app.get('cards/expiredcards', (req, res) => {
         })
 })
 
+// Get expired cards from past 6 hours
+app.get('cards/stalecards', (req, res) => {
+    return cards(config, db)
+        .staleCards()
+        .then((data) => handleResponse(data, res))
+        .catch((err) => {
+            console.log('🚀 ~ file: cards-main.js ~ line 66 ~ app.get ~ err', err)
+            res.status(400).json({ error: 'Failed to fetch expired card' })
+        })
+})
+
 // Return a card
 app.get('cards/:cardId', (req, res) => {
     return cards(config, db)

@@ -124,6 +124,55 @@ const cards = (config, db) => ({
                 })
         }),
 
+
+    staleCards: () =>
+        new Promise((resolve, reject) => {
+            // eslint-disable-next-line max-len
+            const query = `SELECT c.card_id, c.username, c.network, c.language, c.network_data,
+    c.received, CASE WHEN r.card_id IS NOT NULL THEN
+      json_build_object('created_at', r.created_at, 'disaster_type',
+      r.disaster_type, 'text', r.text, 'is_training' , r.is_training 'card_data', r.card_data, 'image_url',
+      r.image_url, 'status', r.status)
+    ELSE null END AS report
+    FROM ${config.TABLE_GRASP_CARDS} c
+    LEFT JOIN ${config.TABLE_GRASP_REPORTS} r USING (card_id)
+    WHERE ((r.disaster_type = 'flood' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
+    OR (r.disaster_type = 'earthquake' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
+    OR (r.disaster_type = 'wind' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
+    OR (r.disaster_type = 'haze' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
+    OR (r.disaster_type = 'volcano' AND r.created_at >= to_timestamp(?) AND r.created_at <= to_timestamp(?) )
+    OR (r.disaster_type = 'fire' AND r.created_at >= to_timestamp(?)) AND r.created_at <= to_timestamp(?) )
+    OR r.created_at >= to_timestamp(?)`
+            const now = Date.now() / 1000
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                replacements: [
+                    now - config.FLOOD_REPORTS_TIME_WINDOW,
+                    now - config.FLOOD_REPORTS_TIME_WINDOW + 1800,
+                    now - config.EQ_REPORTS_TIME_WINDOW,
+                    now - config.EQ_REPORTS_TIME_WINDOW + 1800,
+                    now - config.WIND_REPORTS_TIME_WINDOW,
+                    now - config.WIND_REPORTS_TIME_WINDOW + 1800,
+                    now - config.HAZE_REPORTS_TIME_WINDOW,
+                    now - config.HAZE_REPORTS_TIME_WINDOW + 1800,
+                    now - config.VOLCANO_REPORTS_TIME_WINDOW,
+                    now - config.VOLCANO_REPORTS_TIME_WINDOW + 1800,
+                    now - config.FIRE_REPORTS_TIME_WINDOW,
+                    now - config.FIRE_REPORTS_TIME_WINDOW + 1800,
+                    // To be added to config
+                    now - 21600 ,
+
+                ],
+            })
+                .then((data) => resolve(data))
+                /* istanbul ignore next */
+                .catch((err) => {
+                    /* istanbul ignore next */
+                    reject(err)
+                })
+        }),
+
     // Add entry to the reports table and then update the card record accordingly
     submitReport: (card, body) =>
         new Promise((resolve, reject) => {

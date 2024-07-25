@@ -34,21 +34,17 @@ app.get('needs/', (req, res) =>
             // To map requested items against requested quantities
             const formattedData = data.map((entry) => {
                 const itemsRequested = []
-                entry.all_items_requested.reverse().forEach((item, index) => {
+                entry.all_item_ids.forEach((item, index) => {
                     itemsRequested.push({
-                        'item-name': item,
-                        quantity: `${entry.all_quantities_requested[index]}`,
-                        units: `${entry.all_units[index]}`,
+                        'item-id': item,
+                        quantity: entry.all_quantity_requested[index] || 0,                        
                         description: entry.all_descriptions[index] || '',
                     })
                 })
                 entry.items_requested = itemsRequested
 
                 // Delete the unnecessary items for the response
-                delete entry.all_quantities_requested
                 delete entry.all_descriptions
-                delete entry.all_items_requested
-                delete entry.all_units
                 return entry
             })
             return handleGeoResponse(formattedData, req, res)
