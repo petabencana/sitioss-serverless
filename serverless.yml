@@ -10,7 +10,6 @@ plugins:
     - serverless-offline
     - serverless-deployment-bucket
 
-
 # Comment out this custom block if running locally
 custom:
     customDomain:
