@@ -41,6 +41,17 @@ app.get('subscriptions/count', (req, res) => {
         })
 })
 
+app.get('subscriptions/regions', (req, res, next) => {
+    return subscriptions(config, db)
+        .getRegionBySubscription(req.query?.id)
+        .then((data) => res.status(200).json(data))
+        .catch((err) => {
+            console.log('🚀 ~ file: subscription-main.js:37 ~ err', err)
+            return res.status(500).json({ message: 'Could not process request' })
+            /* istanbul ignore next */
+        })
+})
+
 app.post('subscriptions/add-subscriber', (req, res) => {
     if (!req?.body?.userId) {
         return res.status(400).json({ message: 'Bad Request , user id is needed' })

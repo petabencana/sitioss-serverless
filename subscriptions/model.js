@@ -110,6 +110,31 @@ const subscriptions = (config, db, logger) => ({
                 })
         }),
 
+    getRegionBySubscription: (value) =>
+        new Promise((resolve, reject) => {
+            // Setup query
+            const query = `
+                SELECT sr.subscription_id, r.region
+                FROM ${config.TABLE_SUBSCRIPTIONS_REGIONS} sr
+                JOIN ${config.TABLE_REGIONS} r ON sr.region_code = r.region_code
+                WHERE sr.subscription_id = ?
+            `
+
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                replacements: [value],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                /* istanbul ignore next */
+                .catch((err) => {
+                    /* istanbul ignore next */
+                    reject(err)
+                })
+        }),
+
     addNewSubscription: async (body) => {
         const userId = body.userId
         const regionCodes = body.regions

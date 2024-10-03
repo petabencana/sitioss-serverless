@@ -289,7 +289,6 @@ function canTriggerNotification(data) {
                         transformedReportCounts.some((item) => item.regionCode === code && item.count >= 3)
                     )
                 )
-                console.log(transformedReportCounts, subscriptionData, filteredSubscriptionData)
 
                 if (filteredSubscriptionData.length !== 0) {
                     // Using Promise.all to handle multiple notifications concurrently
