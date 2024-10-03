@@ -32,7 +32,10 @@ app.get('reports', cacheResponse('1 minute'), (req, res) =>
     reports(config, db)
         .all(req.query.timeperiod, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => {
-            if(req.query.timeperiod > 2592000) return res.status(400).json({status : 400 , message : 'Time period should be less than our equal to 2592000 (30 days)'})
+            if (req.query.timeperiod > 2592000)
+                return res
+                    .status(400)
+                    .json({ status: 400, message: 'Time period should be less than our equal to 2592000 (30 days)' })
             // Sentry.setTag("invocation-source", "website");
             // console.log("🚀 ~ file: reports-main.js ~ line 32 ~ .then ~ data", data);
             return handleGeoCapResponse(data, req, res, cap)
@@ -62,6 +65,23 @@ app.get('reports/:id', cacheResponse('1 minute'), (req, res) =>
             /* istanbul ignore next */
             // next(err);
         })
+)
+
+app.delete('reports/:id', (req, res) =>
+    reports(config, db)
+        .deleteById(req.params.id)
+        .then((data) =>
+            res
+                .status(200)
+                .json({ message: 'Record deleted successfully' })
+                .catch((err) => {
+                    console.log('🚀 ~ file: reports-main.js ~ line 41 ~ err', err)
+                    /* istanbul ignore next */
+                    // logger.error(err);
+                    /* istanbul ignore next */
+                    // next(err);
+                })
+        )
 )
 
 app.patch('reports/:id', (req, res) => {
@@ -114,7 +134,6 @@ app.patch('reports/:id/flag', (req, res) => {
             // next(err);
         })
 })
-
 
 app.get('reports/timeseries', cacheResponse('1 minute'), (req, res) => {
     return timeseries(config, db)

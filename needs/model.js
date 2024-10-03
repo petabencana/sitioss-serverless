@@ -1,11 +1,11 @@
 /* eslint-disable camelcase */
-'use strict';
+'use strict'
 /**
  * CogniCity Server /infrastructure data model
  * @module src/api/needs/model
  **/
-const { QueryTypes } = require('@sequelize/core');
-const { TABLE_COGNICITY_PARTNERS, TABLE_LOGISTICS_GIVER_DETAILS } = require('../config');
+const { QueryTypes } = require('@sequelize/core')
+const { TABLE_COGNICITY_PARTNERS, TABLE_LOGISTICS_GIVER_DETAILS } = require('../config')
 /**
  * Methods to get infrastructure layers from database
  * @alias module:src/api/needs/model
@@ -102,7 +102,7 @@ const needs = (config, db) => ({
         return new Promise(async (resolve, reject) => {
             let queryForNeedReports = `INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} ("status", "quantity_requested", "item_requested", "need_language", "units", "item_id", "description", "need_request_id",  "the_geom")
 				VALUES `
-        
+
             const needValues = []
             const needPlaceholders = []
             let index = 1
@@ -129,7 +129,7 @@ const needs = (config, db) => ({
                 index += 10 // increment index by 11 for each report object
             }
 
-            queryForNeedReports += `${needPlaceholders.join(', ')  } RETURNING id, need_language`;
+            queryForNeedReports += `${needPlaceholders.join(', ')} RETURNING id, need_language`
 
             try {
                 const result = await db.query(queryForNeedReports, {
@@ -137,26 +137,28 @@ const needs = (config, db) => ({
                     bind: needValues,
                 })
 
-                const insertedRows = result[0];
-                const insertedData = insertedRows.map(row => ({ id: row.id, need_language: row.need_language }));
+                const insertedRows = result[0]
+                const insertedData = insertedRows.map((row) => ({ id: row.id, need_language: row.need_language }))
                 // Prepare the query and values for the associations table
-                let queryForAssociations = `INSERT INTO ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} ("need_id", "user_id" , "need_language") VALUES `;
-                const associationPlaceholders = [];
-                const associationValues = [];
-                let associationIndex = 1;
+                let queryForAssociations = `INSERT INTO ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} ("need_id", "user_id" , "need_language") VALUES `
+                const associationPlaceholders = []
+                const associationValues = []
+                let associationIndex = 1
                 insertedData.forEach((data) => {
-                    associationValues.push(data.id, userId , data.need_language);
-                    associationPlaceholders.push(`($${associationIndex}, $${associationIndex + 1}, $${associationIndex + 2})`);
+                    associationValues.push(data.id, userId, data.need_language)
+                    associationPlaceholders.push(
+                        `($${associationIndex}, $${associationIndex + 1}, $${associationIndex + 2})`
+                    )
                     associationIndex += 3
-                });
+                })
 
-                queryForAssociations += associationPlaceholders.join(', ');
+                queryForAssociations += associationPlaceholders.join(', ')
 
                 // Insert into need_user_associations table
                 await db.query(queryForAssociations, {
                     type: QueryTypes.INSERT,
                     bind: associationValues,
-                });
+                })
 
                 resolve(result)
             } catch (err) {
@@ -168,39 +170,40 @@ const needs = (config, db) => ({
 
     updateNeed: (body, value) =>
         new Promise((resolve, reject) => {
-            const status = body?.status || null;
-            const quantity_requested = body?.quantity_requested || null;
-            const item_requested = body?.item_requested || null;
-            const useCurrentDate = body?.current_date === 'current';
-            
+            const status = body?.status || null
+            const quantity_requested = body?.quantity_requested || null
+            const item_requested = body?.item_requested || null
+            const useCurrentDate = body?.current_date === 'current'
+
             // Initialize base query and parameters array
             let query = `UPDATE ${config.TABLE_LOGISTICS_NEEDS} SET 
               status = COALESCE($1, status), 
               quantity_requested = COALESCE($2, quantity_requested), 
-              item_requested = COALESCE($3, item_requested)`;
-            
+              item_requested = COALESCE($3, item_requested)`
+
             // Add the current date handling
             if (useCurrentDate) {
-              query += ', created_date = CURRENT_DATE';
+                query += ', created_date = CURRENT_DATE'
             } else {
-              query += ', created_date = COALESCE($4, created_date)';
+                query += ', created_date = COALESCE($4, created_date)'
             }
-            
+
             // Add the WHERE clause
-            query += ' WHERE id = $5';
-            
+            query += ' WHERE id = $5'
+
             // Initialize parameters array
-            const params = [status, quantity_requested, item_requested];
+            const params = [status, quantity_requested, item_requested]
             if (!useCurrentDate) {
-              params.push(body?.current_date || null); // Push the current_date only if not using CURRENT_DATE
+                params.push(body?.current_date || null) // Push the current_date only if not using CURRENT_DATE
             }
-            params.push(value.id); // Add the id to the parameters
-            
+            params.push(value.id) // Add the id to the parameters
+
             // Execute the query
             db.query(query, {
-              type: QueryTypes.UPDATE,
-              bind: params,
-            }).then((data) => {
+                type: QueryTypes.UPDATE,
+                bind: params,
+            })
+                .then((data) => {
                     resolve(data)
                 })
                 /* istanbul ignore next */
@@ -210,7 +213,7 @@ const needs = (config, db) => ({
                 })
         }),
 
-    rescheduleDeliveryDate: (body , value) => {
+    rescheduleDeliveryDate: (body, value) => {
         return new Promise((resolve, reject) => {
             const DayMap = {
                 one: '1 day',
@@ -284,10 +287,7 @@ const needs = (config, db) => ({
                         resolve(data)
                     })
                     .catch((err) => {
-                        console.log(
-                            'Data failed to insert in need reports',
-                            err
-                        )
+                        console.log('Data failed to insert in need reports', err)
                         reject(err)
                     })
             })
@@ -296,7 +296,7 @@ const needs = (config, db) => ({
         }
     },
 
-     queryUserIdByNeedId : (id) => {
+    queryUserIdByNeedId: (id) => {
         return new Promise((resolve, reject) => {
             const query = `SELECT * FROM ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} WHERE need_id=$1;`
             db.query(query, {
@@ -313,7 +313,7 @@ const needs = (config, db) => ({
         })
     },
 
-    queryGiverIdByNeedId : (id) => {
+    queryGiverIdByNeedId: (id) => {
         return new Promise((resolve, reject) => {
             const query = `SELECT * FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} WHERE need_id=$1;`
             db.query(query, {
@@ -330,14 +330,14 @@ const needs = (config, db) => ({
         })
     },
 
-    getItems : (params) => {
+    getItems: (params) => {
         return new Promise((resolve, reject) => {
-        const IntervalMap = {
-            today: 'CURRENT_DATE',
-            yesterday: '(CURRENT_DATE - INTERVAL \'1 day\')',
-            expired: '(CURRENT_DATE - INTERVAL \'2 day\')'
-        };
-        const query = `SELECT 
+            const IntervalMap = {
+                today: 'CURRENT_DATE',
+                yesterday: "(CURRENT_DATE - INTERVAL '1 day')",
+                expired: "(CURRENT_DATE - INTERVAL '2 day')",
+            }
+            const query = `SELECT 
         gd.giver_id,
         gd.giver_language,
         gd.date_extended,
@@ -365,9 +365,14 @@ const needs = (config, db) => ({
         })
     },
 
-    getExpiredNeeds : () => {
+    getExpiredNeeds: (params) => {
         return new Promise((resolve, reject) => {
-        const query = `SELECT 
+            const WhereClauseMap = {
+                stale: "WHERE DATE(created_date) = (CURRENT_DATE - INTERVAL '5 day') AND status != 'IN EXPIRY'",
+                'message-expired':
+                    "WHERE DATE(updated_at) = (CURRENT_DATE - INTERVAL '3 day') AND status = 'IN EXPIRY'",
+            }
+            const query = `SELECT 
         ARRAY_AGG(DISTINCT nr.id) AS need_id,
         ARRAY_AGG(DISTINCT na.user_id) AS need_user_id,
         ARRAY_AGG(DISTINCT na.need_language) AS need_language
@@ -375,13 +380,14 @@ const needs = (config, db) => ({
         ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} na
 		LEFT JOIN 
         ${config.TABLE_LOGISTICS_NEEDS} nr ON nr.id = na.need_id
-		WHERE DATE(created_date) = CURRENT_DATE - INTERVAL '5 day';`
+		${WhereClauseMap[params.interval]};`
 
             db.query(query, {
                 type: QueryTypes.SELECT,
             })
                 .then((data) => {
-                    resolve(data)
+                    const isDataEmpty = data[0] && Object.values(data[0]).every((val) => val === null)
+                    resolve(isDataEmpty ? [] : data)
                 })
                 .catch((err) => {
                     console.log('error here', err)
@@ -395,57 +401,57 @@ const needs = (config, db) => ({
             const giverId = `+${requestQuery.giverId}`
             const deliveryCode = `${requestQuery.code}`
             const query = `SELECT * FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} WHERE giver_id = $1 AND delivery_code = $2;`
-    
-                db.query(query, {
-                    type: QueryTypes.SELECT,
-                    bind:[giverId , deliveryCode]
-                })
-                    .then((data) => {
-                        console.log('🚀 ~ .then ~ data:', data)
-                        resolve(data)
-                    })
-                    .catch((err) => {
-                        console.log('error here', err)
-                        reject(err)
-                    })
+
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [giverId, deliveryCode],
             })
+                .then((data) => {
+                    console.log('🚀 ~ .then ~ data:', data)
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
     },
 
     getNeedIdsByUserId: (userId) => {
         return new Promise((resolve, reject) => {
             const query = `SELECT * FROM ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} WHERE user_id = $1;`
-    
-                db.query(query, {
-                    type: QueryTypes.SELECT,
-                    bind:[userId]
-                })
-                    .then((data) => {
-                        resolve(data)
-                    })
-                    .catch((err) => {
-                        console.log('error here', err)
-                        reject(err)
-                    })
+
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [userId],
             })
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
     },
 
     deleteGiverDetailsById: (needId) => {
         return new Promise((resolve, reject) => {
             const query = `DELETE FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} WHERE need_id = $1;`
-    
-                db.query(query, {
-                    type: QueryTypes.DELETE,
-                    bind:[needId]
-                })
-                    .then((data) => {
-                        resolve(data)
-                    })
-                    .catch((err) => {
-                        console.log('error here', err)
-                        reject(err)
-                    })
+
+            db.query(query, {
+                type: QueryTypes.DELETE,
+                bind: [needId],
             })
-    }
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
+    },
 })
 
 module.exports = needs

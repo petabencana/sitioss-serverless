@@ -1,8 +1,9 @@
 {
-    "extends": ["eslint:recommended", "@serverless/eslint-config/node"],
+    "extends": ["eslint:recommended", "@serverless/eslint-config/node", "plugin:jsdoc/recommended"],
     "rules": {
         "no-unused-vars": "warn",
         "no-console": "off",
-        "no-undef": "warn"
+        "no-undef": "warn",
+        "jsdoc/check-param-names": "error"
     }
 }

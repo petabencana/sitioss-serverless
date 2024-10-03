@@ -37,7 +37,7 @@ app.get('needs/', (req, res) =>
                 entry.all_item_ids.forEach((item, index) => {
                     itemsRequested.push({
                         'item-id': item,
-                        quantity: entry.all_quantity_requested[index] || 0,                        
+                        quantity: entry.all_quantity_requested[index] || 0,
                         description: entry.all_descriptions[index] || '',
                     })
                 })
@@ -89,33 +89,10 @@ app.get('needs/verify-delivery-code', (req, res) =>
         })
 )
 
-app.get('needs/expired', (req, res) =>
+app.get('needs/:interval', (req, res) =>
     needs(config, db)
-        .getExpiredNeeds()
-        .then(async(data) => {
-            if(data.length > 0){
-                try {
-                    const notifyPromises = data[0].need_user_id.map(async (item, index) => {
-                        const body = {};
-                        const fetchNeedIds = await needs(config, db).getNeedIdsByUserId(item);
-                        const userId = item;
-                        const needLanguage = data[0].need_language.length === 2 ? data[0].need_language[index] : data[0].need_language[0]; // To handle both languages i.e. id and en
-                        const needIds = fetchNeedIds.map((need) => need.need_id);
-                        body.userId = userId;
-                        body.notifyType = 'expiry-confirmation';
-                        body.needIds = needIds;
-                        body.language = needLanguage;
-                        return invokeNotify(body);
-                    });
-
-                    await Promise.all(notifyPromises);
-
-                    return res.status(200).json(data);
-                } catch (err) {
-                    console.log('Notification error:', err);
-                    return res.status(200).json(data); // You might want to handle this differently
-                }
-            }
+        .getExpiredNeeds(req.params)
+        .then(async (data) => {
             return res.status(200).json(data)
         })
         .catch((err) => {
@@ -124,7 +101,6 @@ app.get('needs/expired', (req, res) =>
             /* istanbul ignore next */
         })
 )
-
 
 app.patch('needs/need/:id', (req, res) =>
     needs(config, db)
@@ -145,11 +121,11 @@ app.patch('needs/giver-details/:id', (req, res) =>
         .then(async (data) => {
             console.log('🚀 ~ .then ~ data:', data)
             // Send Notification
-            return res.status(200).json({ message: 'Updated Information successfully' , data })
+            return res.status(200).json({ message: 'Updated Information successfully', data })
         })
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
-            return res.status(400).json({ error: `Error updating data${  err}` })
+            return res.status(400).json({ error: `Error updating data${err}` })
             /* istanbul ignore next */
         })
 )
@@ -175,9 +151,7 @@ app.post('needs/create-need', (req, res) =>
         })
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
-            return res
-                .status(400)
-                .json({ message: 'Could not process request' })
+            return res.status(400).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
 )
@@ -187,40 +161,37 @@ app.post('needs/update-giver', (req, res) =>
         .addGiverReport(req.body)
         .then(async () => {
             const notificationsToSend = ['donor-committed', 'delivery-reminder']
-            const fetchByNeedId = await needs(config , db).queryUserIdByNeedId(req.body[0]?.need_id)
+            const fetchByNeedId = await needs(config, db).queryUserIdByNeedId(req.body[0]?.need_id)
             const userId = fetchByNeedId[0]?.user_id
             const needLanguage = fetchByNeedId[0]?.need_language
             const PayloadMap = {
-                'donor-committed' : {
-                        userId,
-                        notifyType : 'donor-committed',
-                        deliveryCode : `${req.body[0].delivery_code}`,
-                        promisedDate : `${req.body[0].promised_date} , ${req.body[0].promised_time}`,
-                        language : needLanguage
-                    },
-                'delivery-reminder' : {
-                        userId : req.body[0].user_id,
-                        notifyType : 'delivery-reminder',
-                        message: req.body.map(item => item.item_satisfied).join(','),
-                        language : req.body[0].giver_language
-                    }
+                'donor-committed': {
+                    userId,
+                    notifyType: 'donor-committed',
+                    deliveryCode: `${req.body[0].delivery_code}`,
+                    promisedDate: `${req.body[0].promised_date} , ${req.body[0].promised_time}`,
+                    language: needLanguage,
+                },
+                'delivery-reminder': {
+                    userId: req.body[0].user_id,
+                    notifyType: 'delivery-reminder',
+                    message: req.body.map((item) => item.item_satisfied).join(','),
+                    language: req.body[0].giver_language,
+                },
             }
-            notificationsToSend.map(async(item) => {
+            notificationsToSend.map(async (item) => {
                 return invokeNotify(PayloadMap[item])
-                .then(() => {
-                    return res.status(200).json({ message: 'Giver Details Updated' })
-                })
-                .catch((err) => {
-                    return res.status(200).json({ message: 'Giver Details Updated' })
-                })
+                    .then(() => {
+                        return res.status(200).json({ message: 'Giver Details Updated' })
+                    })
+                    .catch((err) => {
+                        return res.status(200).json({ message: 'Giver Details Updated' })
+                    })
             })
-        }
-        )
+        })
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
-            return res
-                .status(400)
-                .json({ message: 'Could not process request' })
+            return res.status(400).json({ message: 'Could not process request' })
             /* istanbul ignore next */
         })
 )
@@ -231,11 +202,11 @@ app.delete('needs/giver-details/:id', (req, res) =>
         .then(async (data) => {
             console.log('🚀 ~ .then ~ data:', data)
             // Send Notification
-            return res.status(200).json({ message: 'Delete Records successfully'})
+            return res.status(200).json({ message: 'Delete Records successfully' })
         })
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
-            return res.status(400).json({ error: `Error deleting data ${  err}` })
+            return res.status(400).json({ error: `Error deleting data ${err}` })
             /* istanbul ignore next */
         })
 )
@@ -245,7 +216,6 @@ function invokeNotify(body) {
         const eventPayload = {
             body,
         }
-        console.log('Event payload: ' , eventPayload)
         const params = {
             FunctionName: 'logistics-whatsapp-bot-replies', // the lambda function we are going to invoke
             InvocationType: 'Event',
@@ -266,7 +236,6 @@ function invokeNotify(body) {
         }
     })
 }
-
 
 // ----------------------------------------------------------------------------//
 // Main router handler

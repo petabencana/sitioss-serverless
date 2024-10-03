@@ -276,10 +276,10 @@ function getSubscriptionLog(userId, region) {
     })
 }
 
-function isCityInRegionCodes(reportArray, targetCity) {
+function isCityInRegionCodes(reportArray, targetCity, isSuperUser, subscriptionLogData) {
     for (const report of reportArray) {
-        if (report.city === targetCity && report.count >= 3) {
-            return true
+        if (report.city === targetCity) {
+            if ((report.count >= 3 && subscriptionLogData.length === 0) || isSuperUser) return true
         }
     }
     return false
@@ -297,25 +297,20 @@ function canTriggerNotification(data) {
                 const filterRegionCodeAndCount = transformedReportCounts.filter(
                     (report) => report.regionCode === regionCodeOfReportCreated && report.count >= 3
                 )
-                const filterByCityName = filterRegionCodeAndCount.filter(
-                    (report) => report.regionCode === regionCodeOfReportCreated
-                )
-                const cityName = filterByCityName[0].city
 
                 const notificationsLog = await getSubscriptionLog('info@petabencana.id', regionCodeOfReportCreated)
 
                 if (filterRegionCodeAndCount.length > 0 && notificationsLog.length === 0) {
                     const body = {}
                     body.userId = 'info@petabencana.id'
+                    const cityName = filterRegionCodeAndCount[0].city
                     await invokeSNSTopicLambda({ cityName, instanceRegionCode, reportId })
                     await addSubscriptionLog(body, 'email', regionCodeOfReportCreated)
                 }
 
                 const subscriptionData = await getSubscriptions()
                 const filteredSubscriptionData = subscriptionData.filter((entry) =>
-                    entry.regionCodes.some((code) =>
-                        transformedReportCounts.some((item) => item.city === code && item.count >= 3)
-                    )
+                    entry.regionCodes.some((code) => transformedReportCounts.some((item) => item.city === code))
                 )
 
                 if (filteredSubscriptionData.length !== 0) {
@@ -332,9 +327,14 @@ function canTriggerNotification(data) {
                             body.card.network = 'whatsapp'
                             body.instanceRegionCode = instanceRegionCode
                             body.reportId = reportId
+                            const canSendNotification = isCityInRegionCodes(
+                                transformedReportCounts,
+                                regionCode,
+                                subscription.isSuperuser,
+                                subscriptionLogData
+                            )
 
-                            const matchingCity = isCityInRegionCodes(transformedReportCounts, regionCode)
-                            if (subscriptionLogData.length === 0 && matchingCity) {
+                            if (canSendNotification) {
                                 return invokeNotify(body).then(async () => {
                                     return await addSubscriptionLog(subscription, 'whatsapp', regionCode)
                                 })

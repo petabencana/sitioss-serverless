@@ -46,68 +46,6 @@ const formatGeo = (body, outputFormat) =>
         })
     })
 
-const getDisasterSeverity = (disasterType, reportData) => {
-    let level = 'low'
-    switch (disasterType) {
-        case 'flood': {
-            reportData = reportData || { flood_depth: 0 }
-            const depth = reportData.flood_depth || 0
-            level = depth > 150 ? 'high' : 'low'
-            break
-        }
-        case 'earthquake': {
-            const subType = reportData.report_type
-            if (subType === 'road') {
-                reportData = reportData || { accessabilityFailure: 0 }
-                const accessability = reportData.accessabilityFailure || 0
-                level = accessability === 0 ? 'high' : 'low'
-            } else if (subType === 'structure') {
-                reportData = reportData || { structureFailure: 0 }
-                const structureFailure = reportData.structureFailure || 0
-                level = structureFailure >= 2 ? 'high' : 'low'
-            }
-            break
-        }
-        case 'haze':
-            switch (reportData.airQuality) {
-                case 0:
-                    level = 'low'
-                    break
-                case 1:
-                    level = 'low'
-                    break
-                case 2:
-                    level = 'normal'
-                    break
-                case 3:
-                    level = 'high'
-                    break
-                case 4:
-                    level = 'high'
-                    break
-                default:
-                    level = 'low'
-                    break
-            }
-            break
-        case 'wind': {
-            reportData = reportData || { impact: 0 }
-            const impact = reportData.impact || 0
-            level = impact === 2 ? 'high' : 'low'
-            break
-        }
-        case 'volcano':
-            level = 'high'
-            break
-        case 'fire':
-            level = 'high'
-            break
-        default:
-            break
-    }
-    return level
-}
-
 const filterReports = (data) => {
     const transformedReportCounts = []
     data.forEach((obj) => {
@@ -115,20 +53,17 @@ const filterReports = (data) => {
             const regionCode = obj.tags.region_code
             const city = obj.tags.city
             const disasterType = obj.disaster_type
-            const reportData = obj.report_data
-            const disasterSeverity = getDisasterSeverity(disasterType, reportData)
             const existingRegion = transformedReportCounts.find(
                 (item) => item.regionCode === regionCode && item.disasterType === disasterType
             )
             if (existingRegion) {
-                existingRegion.count = disasterSeverity === 'high' ? 3 : existingRegion.count + 1
+                existingRegion.count = existingRegion.count + 1
                 // Set city only if it's not already present
                 if (city && !existingRegion.city) {
                     existingRegion.city = city
                 }
             } else {
-                // If severity is high, set count to 3
-                const count = disasterSeverity === 'high' ? 3 : 1
+                const count = 1
                 transformedReportCounts.push({
                     regionCode,
                     count,
@@ -228,5 +163,4 @@ module.exports = {
     checkIfPointInGeometry,
     formatGeo,
     filterReports,
-    getDisasterSeverity,
 }

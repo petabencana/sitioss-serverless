@@ -43,28 +43,41 @@ app.get('subscriptions/count', (req, res, next) => {
         })
 })
 
-app.post('subscriptions/add-subscriber', (req, res, next) => {
+app.get('subscriptions/regions', (req, res, next) => {
+    return subscriptions(config, db)
+        .getRegionBySubscription(req.query?.id)
+        .then((data) => res.status(200).json(data))
+        .catch((err) => {
+            console.log('🚀 ~ file: subscription-main.js:37 ~ err', err)
+            return res.status(500).json({ message: 'Could not process request' })
+            /* istanbul ignore next */
+        })
+})
+
+app.post('subscriptions/add-subscriber', async (req, res, next) => {
     if (!req?.body?.userId) {
-        return res.status(400).json({ message: 'Bad Request , whatsapp number is needed' })
+        await invokeSNSTopicLambda(req.body)
+        return res.status(400).json({ message: 'Bad Request , whatsapp number is needed', code: 'no-whatsapp-number' })
     }
     return subscriptions(config, db)
         .addNewSubscription(req.body)
-        .then((data) => {
+        .then(async (data) => {
             const body = { card: {} }
             body.card.userId = req?.body?.userId
             body.card.notifyType = 'thank-you-subscriber'
             body.card.language = req?.body?.language
-            return invokeNotify(config, body)
-                .then(() => {
-                    return res.status(200).json('Success')
-                })
-                .catch((err) => {
-                    return res.status(200).json('Success')
-                })
+            await invokeNotify(body)
+            return res.status(200).json('Success')
         })
-        .catch((err) => {
-            console.log('🚀 ~ file: subscription-main.js:37 ~ err', err)
-            return res.status(500).json({ message: 'Could not process request' })
+        .catch(async (err) => {
+            console.log('Subscription Failed for', req.body, err)
+            await invokeSNSTopicLambda(req.body)
+            if (err.name === 'SequelizeUniqueConstraintError') {
+                return res
+                    .status(400)
+                    .json({ message: 'Already Subscribed to the selected regions', code: 'same-region-select' })
+            }
+            return res.status(500).json({ message: 'Could not process request', code: 'server-error' })
             /* istanbul ignore next */
         })
 })
@@ -73,7 +86,6 @@ app.delete('subscriptions/delete-subscriber', (req, res, next) => {
     if (!req?.body?.phonenumber) {
         return res.status(400).json({ message: 'Bad Request , whatsapp number is needed' })
     }
-    console.log('Coming inside delete method', req?.body?.phonenumber)
     return subscriptions(config, db)
         .deleteSubscription(req?.body?.phonenumber)
         .then((data) => res.status(200).json({ data: 'Successfully deleted' }))
@@ -106,6 +118,29 @@ function invokeNotify(body) {
                 } else {
                     resolve('Lambda invoked')
                     console.log('Lambda invoked')
+                }
+            })
+        } catch (err) {
+            console.log('error: ', err)
+        }
+    })
+}
+
+async function invokeSNSTopicLambda(requestBody) {
+    return new Promise((resolve, reject) => {
+        const params = {
+            FunctionName: 'Publish_SNS_Topic', // the lambda function we are going to invoke
+            InvocationType: 'Event',
+            Payload: JSON.stringify({ requestBody }),
+        }
+        try {
+            lambda.invoke(params, (err) => {
+                if (err) {
+                    reject(err)
+                    console.log('Err', err)
+                } else {
+                    resolve('SNS Lambda invoked')
+                    console.log('SNS Lambda invoked')
                 }
             })
         } catch (err) {

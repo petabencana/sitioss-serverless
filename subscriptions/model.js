@@ -63,10 +63,30 @@ const subscriptions = (config, db, logger) => ({
                 })
         }),
 
+    getRegionBySubscription: (value) =>
+        new Promise((resolve, reject) => {
+            // Setup query
+            const query = `SELECT * FROM ${config.TABLE_SUBSCRIPTIONS_REGIONS} WHERE subscription_id = ?`
+
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                replacements: [value],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                /* istanbul ignore next */
+                .catch((err) => {
+                    /* istanbul ignore next */
+                    reject(err)
+                })
+        }),
+
     fetchSubscriptions: () =>
         new Promise((resolve, reject) => {
             // Setup query
-            const query = `SELECT s.user_id, s.language_code, ARRAY_AGG(wr.region_code) AS region_codes FROM ${TABLE_SUBSCRIPTIONS} s INNER JOIN ${TABLE_SUBSCRIPTIONS_REGIONS} wr ON s.user_id = wr.subscription_id GROUP BY s.user_id, s.language_code;`
+            const query = `SELECT s.user_id, s.language_code, s.is_super_user, ARRAY_AGG(wr.region_code) AS region_codes FROM ${TABLE_SUBSCRIPTIONS} s INNER JOIN ${TABLE_SUBSCRIPTIONS_REGIONS} wr ON s.user_id = wr.subscription_id GROUP BY s.user_id, s.language_code , s.is_super_user;`
 
             // Execute
             db.query(query, {
@@ -77,6 +97,7 @@ const subscriptions = (config, db, logger) => ({
                         ...data.map((row) => ({
                             userId: row.user_id,
                             languageCode: row.language_code,
+                            isSuperuser: row.is_super_user,
                             regionCodes: row.region_codes,
                         })),
                     ]

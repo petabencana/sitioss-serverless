@@ -33,32 +33,16 @@ const reports = (config, db) => ({
       AND ($11::boolean is NULL OR is_training=$11::boolean)
       ORDER BY created_at DESC LIMIT $9`
 
-            const floodTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.FLOOD_REPORTS_TIME_WINDOW)
-            const eqTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.EQ_REPORTS_TIME_WINDOW)
-            const hazeTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.HAZE_REPORTS_TIME_WINDOW)
-            const windTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.WIND_REPORTS_TIME_WINDOW)
-            const typhoonTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.WIND_REPORTS_TIME_WINDOW)
-            const volcanoTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.VOLCANO_REPORTS_TIME_WINDOW)
-            const fireTimeWindow =
-                Date.now() / 1000 -
-                (timeperiod || config.FIRE_REPORTS_TIME_WINDOW)
+            const floodTimeWindow = Date.now() / 1000 - (timeperiod || config.FLOOD_REPORTS_TIME_WINDOW)
+            const eqTimeWindow = Date.now() / 1000 - (timeperiod || config.EQ_REPORTS_TIME_WINDOW)
+            const hazeTimeWindow = Date.now() / 1000 - (timeperiod || config.HAZE_REPORTS_TIME_WINDOW)
+            const windTimeWindow = Date.now() / 1000 - (timeperiod || config.WIND_REPORTS_TIME_WINDOW)
+            const typhoonTimeWindow = Date.now() / 1000 - (timeperiod || config.WIND_REPORTS_TIME_WINDOW)
+            const volcanoTimeWindow = Date.now() / 1000 - (timeperiod || config.VOLCANO_REPORTS_TIME_WINDOW)
+            const fireTimeWindow = Date.now() / 1000 - (timeperiod || config.FIRE_REPORTS_TIME_WINDOW)
             const adminType = admin || null
             const disaster = disasterType || null
-            const apiLimit = config.API_REPORTS_LIMIT
-                ? config.API_REPORTS_LIMIT
-                : null
+            const apiLimit = config.API_REPORTS_LIMIT ? config.API_REPORTS_LIMIT : null
             const isTraining = training?.toString() ? training : null
             // Execute
             db.query(query, {
@@ -82,10 +66,7 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 73 ~ newPromise ~ err',
-                        err
-                    )
+                    console.log('🚀 ~ file: model.js ~ line 73 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -110,10 +91,29 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err',
-                        err
-                    )
+                    console.log('🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err', err)
+                    /* istanbul ignore next */
+                    reject(err)
+                })
+        }),
+
+    // Delete specific report by id
+    deleteById: (id) =>
+        new Promise((resolve, reject) => {
+            // Setup query
+            const query = `DELETE FROM ${config.TABLE_REPORTS} WHERE pkey = ?`
+
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                replacements: [id],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                /* istanbul ignore next */
+                .catch((err) => {
+                    console.log('🚀 ~ file: model.js ~ line 98 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -152,10 +152,7 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 137 ~ newPromise ~ err',
-                        err
-                    )
+                    console.log('🚀 ~ file: model.js ~ line 137 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
@@ -181,10 +178,7 @@ const reports = (config, db) => ({
                 })
                 /* istanbul ignore next */
                 .catch((err) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 163 ~ newPromise ~ err',
-                        err
-                    )
+                    console.log('🚀 ~ file: model.js ~ line 163 ~ newPromise ~ err', err)
                     /* istanbul ignore next */
                     reject(err)
                 })
