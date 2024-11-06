@@ -68,6 +68,24 @@ const getDisasterSeverity = (disasterType, reportData) => {
             }
             break
         }
+
+        case 'typhoon': {
+            const subType = reportData.report_type
+            if (subType === 'wind') {
+                reportData = reportData || { impact: 0 }
+                const impact = reportData.impact || 0
+                level = impact === 2 ? 'high' : 'low'
+            } else if (subType === 'flood') {
+                reportData = reportData || { flood_depth: 0 }
+                const depth = reportData.flood_depth || 0
+                level = depth > 150 ? 'high' : 'low'
+            } else if (subType === 'storm') {
+                reportData = reportData || { impact: 0 }
+                const impact = reportData.impact || 0
+                level = impact === 2 ? 'high' : 'low'
+            }
+            break
+        }
         case 'haze':
             switch (reportData.airQuality) {
                 case 0:
