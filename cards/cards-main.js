@@ -255,11 +255,11 @@ function getSubscriptions() {
     })
 }
 
-function addSubscriptionLog(subscription, notificationMedium, region) {
+function addSubscriptionLog(subscription, notificationMedium, region, reportId) {
     subscription.notificationMedium = notificationMedium
     return new Promise((resolve, reject) => {
         return subscriptions(config, db)
-            .addSubscriptionLog(subscription, region)
+            .addSubscriptionLog(subscription, region, reportId)
             .then((data) => resolve(data))
             .catch((err) => reject(err))
     })
@@ -277,7 +277,10 @@ function getSubscriptionLog(userId, region) {
 }
 
 function isCityInRegionCodes(reportArray, targetCity, isSuperUser, subscriptionLogData) {
-    for (const report of reportArray) {
+    const filteredReportArray = reportArray.filter(
+        (report) => !subscriptionLogData.some((sub) => sub.report_id === report.pkey)
+    )
+    for (const report of filteredReportArray) {
         if (report.city === targetCity) {
             if ((report.count >= 3 && subscriptionLogData.length === 0) || isSuperUser) return true
         }
@@ -305,7 +308,7 @@ function canTriggerNotification(data) {
                     body.userId = 'info@petabencana.id'
                     const cityName = filterRegionCodeAndCount[0].city
                     await invokeSNSTopicLambda({ cityName, instanceRegionCode, reportId })
-                    await addSubscriptionLog(body, 'email', regionCodeOfReportCreated)
+                    await addSubscriptionLog(body, 'email', regionCodeOfReportCreated, reportId)
                 }
 
                 const subscriptionData = await getSubscriptions()
@@ -336,7 +339,7 @@ function canTriggerNotification(data) {
 
                             if (canSendNotification) {
                                 return invokeNotify(body).then(async () => {
-                                    return await addSubscriptionLog(subscription, 'whatsapp', regionCode)
+                                    return await addSubscriptionLog(subscription, 'whatsapp', regionCode, reportId)
                                 })
                             }
                             return Promise.resolve()

@@ -124,7 +124,6 @@ const cards = (config, db) => ({
                 })
         }),
 
-
     staleCards: () =>
         new Promise((resolve, reject) => {
             // eslint-disable-next-line max-len
@@ -161,8 +160,7 @@ const cards = (config, db) => ({
                     now - config.FIRE_REPORTS_TIME_WINDOW,
                     now - config.FIRE_REPORTS_TIME_WINDOW + 1800,
                     // To be added to config
-                    now - 21600 ,
-
+                    now - 21600,
                 ],
             })
                 .then((data) => resolve(data))
@@ -314,7 +312,7 @@ const cards = (config, db) => ({
     reports: () =>
         new Promise((resolve, reject) => {
             // Setup query
-            const query = `SELECT disaster_type, report_data, tags, created_at, is_training
+            const query = `SELECT pkey, disaster_type, report_data, tags, created_at, is_training
 			FROM ${config.TABLE_REPORTS}
 			WHERE (
 				(disaster_type = 'flood' AND created_at >= to_timestamp($1))

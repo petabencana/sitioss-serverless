@@ -184,14 +184,14 @@ const subscriptions = (config, db, logger) => ({
         })
     },
 
-    addSubscriptionLog: (body, region) => {
+    addSubscriptionLog: (body, region, reportId) => {
         return new Promise((resolve, reject) => {
             const query = `
-    INSERT INTO ${config.TABLE_SUBSCRIPTIONS_LOG} (database_time, user_id, social_media_type , region) VALUES ($1 , $2 , $3 , $4);`
+    INSERT INTO ${config.TABLE_SUBSCRIPTIONS_LOG} (database_time, user_id, social_media_type , region , report_id) VALUES ($1 , $2 , $3 , $4 , $5);`
             // Execute
             db.query(query, {
                 type: QueryTypes.INSERT,
-                bind: [new Date().toISOString(), body?.userId, body?.notificationMedium, region],
+                bind: [new Date().toISOString(), body?.userId, body?.notificationMedium, region, reportId],
             })
                 .then((data) => {
                     resolve(data)

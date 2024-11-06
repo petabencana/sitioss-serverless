@@ -57,16 +57,18 @@ const filterReports = (data) => {
                 (item) => item.regionCode === regionCode && item.disasterType === disasterType
             )
             if (existingRegion) {
-                existingRegion.count = existingRegion.count + 1
+                existingRegion.count += 1
                 // Set city only if it's not already present
                 if (city && !existingRegion.city) {
                     existingRegion.city = city
                 }
+                existingRegion.pkey = obj.pkey
             } else {
                 const count = 1
                 transformedReportCounts.push({
                     regionCode,
                     count,
+                    pkey: obj.pkey,
                     disasterType,
                     city: city || '',
                 })

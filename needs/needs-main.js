@@ -160,34 +160,34 @@ app.post('needs/update-giver', (req, res) =>
     needs(config, db)
         .addGiverReport(req.body)
         .then(async () => {
-            const notificationsToSend = ['donor-committed', 'delivery-reminder']
+            const notificationsToSend = ['donor-committed-need', 'donor-committed-giver']
             const fetchByNeedId = await needs(config, db).queryUserIdByNeedId(req.body[0]?.need_id)
             const userId = fetchByNeedId[0]?.user_id
             const needLanguage = fetchByNeedId[0]?.need_language
             const PayloadMap = {
-                'donor-committed': {
+                'donor-committed-need': {
                     userId,
-                    notifyType: 'donor-committed',
+                    notifyType: 'donor-committed-need',
                     deliveryCode: `${req.body[0].delivery_code}`,
                     promisedDate: `${req.body[0].promised_date} , ${req.body[0].promised_time}`,
                     language: needLanguage,
                 },
-                'delivery-reminder': {
+                'donor-committed-giver': {
                     userId: req.body[0].user_id,
-                    notifyType: 'delivery-reminder',
-                    message: req.body.map((item) => item.item_satisfied).join(','),
+                    notifyType: 'donor-committed-giver',
+                    itemsPromised: req.body.map((item) => item.item_satisfied).join(','),
+                    promisedDate: `${req.body[0].promised_date} , ${req.body[0].promised_time}`,
                     language: req.body[0].giver_language,
                 },
             }
-            notificationsToSend.map(async (item) => {
-                return invokeNotify(PayloadMap[item])
-                    .then(() => {
-                        return res.status(200).json({ message: 'Giver Details Updated' })
-                    })
-                    .catch((err) => {
-                        return res.status(200).json({ message: 'Giver Details Updated' })
-                    })
-            })
+            Promise.all(notificationsToSend.map((item) => invokeNotify(PayloadMap[item])))
+                .then(() => {
+                    return res.status(200).json({ message: 'Giver Details Updated' })
+                })
+                .catch((err) => {
+                    console.error('Error sending notifications:', err)
+                    return res.status(200).json({ message: 'Giver Details Updated, but notification failed' })
+                })
         })
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
