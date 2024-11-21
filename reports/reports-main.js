@@ -1,8 +1,9 @@
 'use strict'
+
 /**
  * CogniCity Server /reports endpoint
  * @module reports/index
- **/
+ */
 // const Sentry = require("@sentry/serverless");
 // const Tracing = require("@sentry/tracing");
 const reports = require('./model')
@@ -13,11 +14,12 @@ const timeseries = require('./timeseries/model')
 
 const { cacheResponse, handleGeoCapResponse, handleGeoResponse } = require('../utils/utils')
 const Cap = require('../utils/cap')
+
 /**
  * Methods to get  reports from database
  * @alias module:src/api/reports/index
- * @param {Object} config Server configuration
- * @param {Object} db sequilize database instance
+ * @param {object} config Server configuration
+ * @param {object} db sequilize database instance
  */
 
 const cap = new Cap(config) // Setup our cap formatter
@@ -32,10 +34,11 @@ app.get('reports', cacheResponse('1 minute'), (req, res) =>
     reports(config, db)
         .all(req.query.timeperiod, req.query.admin, req.query.disaster, req.query.training)
         .then((data) => {
-            if (req.query.timeperiod > 2592000)
+            if (req.query.timeperiod > 2592000) {
                 return res
                     .status(400)
                     .json({ status: 400, message: 'Time period should be less than our equal to 2592000 (30 days)' })
+            }
             // Sentry.setTag("invocation-source", "website");
             // console.log("🚀 ~ file: reports-main.js ~ line 32 ~ .then ~ data", data);
             return handleGeoCapResponse(data, req, res, cap)

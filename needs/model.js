@@ -368,19 +368,24 @@ const needs = (config, db) => ({
     getExpiredNeeds: (params) => {
         return new Promise((resolve, reject) => {
             const WhereClauseMap = {
-                stale: "WHERE DATE(created_date) = (CURRENT_DATE - INTERVAL '5 day') AND status != 'IN EXPIRY'",
-                'message-expired':
-                    "WHERE DATE(updated_at) = (CURRENT_DATE - INTERVAL '3 day') AND status = 'IN EXPIRY'",
+                stale: "AND DATE(created_date) = (CURRENT_DATE - INTERVAL '5 day') AND status != 'IN EXPIRY'",
+                'message-expired': "AND DATE(updated_at) = (CURRENT_DATE - INTERVAL '3 day') AND status = 'IN EXPIRY'",
             }
             const query = `SELECT 
         ARRAY_AGG(DISTINCT nr.id) AS need_id,
         ARRAY_AGG(DISTINCT na.user_id) AS need_user_id,
         ARRAY_AGG(DISTINCT na.need_language) AS need_language
-		FROM 
+    FROM 
         ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} na
-		LEFT JOIN 
+    LEFT JOIN 
         ${config.TABLE_LOGISTICS_NEEDS} nr ON nr.id = na.need_id
-		${WhereClauseMap[params.interval]};`
+    WHERE 
+        NOT EXISTS (
+            SELECT 1 
+            FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} gd
+            WHERE gd.need_id = nr.id
+        )
+        ${WhereClauseMap[params.interval]};`
 
             db.query(query, {
                 type: QueryTypes.SELECT,
