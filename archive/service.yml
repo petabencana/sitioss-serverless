@@ -6,13 +6,12 @@ package:
     include:
         - node_modules/**
         - utils/**
-        - floods/**
+        - archive/**
 
 functions:
-    floods:
-        handler: floods/floods-main.main
+    reports:
+        handler: archive/archive-main.main
         name: ${self:service}-${opt:stage}
-        # Comment out the below line incase of running it in local
         environment: ${file(./${opt:stage}.env.yml):env}
         vpc:
             securityGroupIds:

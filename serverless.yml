@@ -1,37 +1,45 @@
+org: cdltech
+app: cognicity-reports-sls
 #  These configs are stage specific configs. Loaded in deploy time using --stage command.
 # Name your config yml files as STAGE_NAME.env.yml for clarity
 useDotenv: true
 
-# # Plugin for running the offtine version for testing
+# # Plugin for running the offline version for testing
 plugins:
-  - serverless-domain-manager
-  - serverless-offline
+    - serverless-domain-manager
+    - serverless-offline
+    - serverless-deployment-bucket
 
 # Comment out this custom block if running locally
 custom:
-  customDomain:
-    basePath: "${param:service}"
-    domainName: "${env:DOMAIN_NAME}"
-    stage: "${opt:stage}"
-    certificateArn: "arn:aws:acm:us-east-1:803326344021:certificate/9065d37a-0e50-4879-aeec-b866d900cfbc"
-    createRoute53Record: true
+    customDomain:
+        basePath: '${param:service}'
+        domainName: '${env:DOMAIN_NAME}'
+        stage: '${opt:stage}'
+        certificateArn: 'arn:aws:acm:us-east-1:803326344021:certificate/9065d37a-0e50-4879-aeec-b866d900cfbc'
+        createRoute53Record: true
 
 service: cognicity-${env:SERVICE}-mapa-sls
 
 provider:
-  name: aws
-  region: ap-southeast-1
-  logs:
-    restApi:
-      accessLogging: true
-      format: '{"requestTime":"$context.requestTime","requestId":"$context.requestId","httpMethod":"$context.httpMethod","path":"$context.path","resourcePath":"$context.resourcePath","status":$context.status,"responseLatency":$context.responseLatency,"xrayTraceId":"$context.xrayTraceId","integrationRequestId":"$context.integration.requestId","functionResponseStatus":"$context.integration.status","integrationLatency":"$context.integration.latency","integrationServiceStatus":"$context.integration.integrationStatus","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent"}'
-      executionLogging: false # Turn off execution logs b/c they're too noisy.
-  iam:
-    role:
-      statements:
-        - Effect: "Allow"
-          Action: "*"
-          Resource: "*"
+    name: aws
+    runtime: nodejs16.x
+    region: ap-southeast-1
+    logs:
+        restApi:
+            accessLogging: true
+            format: '{"requestTime":"$context.requestTime","requestId":"$context.requestId","httpMethod":"$context.httpMethod","path":"$context.path","resourcePath":"$context.resourcePath","status":$context.status,"responseLatency":$context.responseLatency,"xrayTraceId":"$context.xrayTraceId","integrationRequestId":"$context.integration.requestId","functionResponseStatus":"$context.integration.status","integrationLatency":"$context.integration.latency","integrationServiceStatus":"$context.integration.integrationStatus","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent"}'
+            executionLogging: false # Turn off execution logs b/c they're too noisy.
+    iam:
+        role:
+            statements:
+                - Effect: 'Allow'
+                  Action: '*'
+                  Resource: '*'
+    deploymentBucket:
+        blockPublicAccess: true
+        name: mapakalamidad-serverless-api-deployment-bucket
+        serverSideEncryption: AES256
 # # load package from the --service option.
 #  Option should be the name of the relevant folder
 #  The service folder should have a service.yml file which contain related packages to include and functions to deploy

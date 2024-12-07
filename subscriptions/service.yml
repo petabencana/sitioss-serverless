@@ -6,18 +6,19 @@ package:
     include:
         - node_modules/**
         - utils/**
-        - floods/**
+        - subscriptions/**
 
 functions:
-    floods:
-        handler: floods/floods-main.main
+    subscriptions:
+        handler: subscriptions/subscription-main.main
         name: ${self:service}-${opt:stage}
-        # Comment out the below line incase of running it in local
+        ##Comment out the below line incase of running it in local
         environment: ${file(./${opt:stage}.env.yml):env}
         vpc:
             securityGroupIds:
                 - sg-019747b737ec5814c
                 - sg-09211b5217c513835
+                - sg-06d69dedd257f9cda
                 - sg-0ca0abab2925a7360
             subnetIds:
                 - subnet-0dd88600a96643d90

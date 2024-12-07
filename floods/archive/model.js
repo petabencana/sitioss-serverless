@@ -2,7 +2,7 @@
  * CogniCity Server /floods/archive data model
  * @module src/api/floods/archive model
  **/
-const { QueryTypes } = require("@sequelize/core");
+const { QueryTypes } = require('@sequelize/core')
 
 /**
  * Methods to interact with flood layers in database
@@ -12,11 +12,11 @@ const { QueryTypes } = require("@sequelize/core");
  * @return {Object} Query methods
  */
 const archive = (config, db) => ({
-  // Get max state of all flood reports over time
-  maxstate: (start, end, admin) =>
-    new Promise((resolve, reject) => {
-      // Setup query
-      let query = `SELECT 
+    // Get max state of all flood reports over time
+    maxstate: (start, end, admin) =>
+        new Promise((resolve, reject) => {
+            // Setup query
+            let query = `SELECT 
       mf.local_area AS area_id, 
       mf.changed AS last_updated,
       mf.max_state 
@@ -25,23 +25,23 @@ const archive = (config, db) => ({
       ${config.TABLE_LOCAL_AREAS} AS la
     WHERE 
       mf.local_area = la.pkey AND
-      ($3 IS NULL OR la.instance_region_code = $3)`;
+      ($3 IS NULL OR la.instance_region_code = $3)`
 
-      // Execute
-      db.query(query, {
-        type: QueryTypes.SELECT,
-        bind: [start, end, admin],
-      })
-        .then((data) => resolve(data))
-        /* istanbul ignore next */
-        .catch((err) => {
-          reject(err);
-        });
-    }),
-  maxstateOld: (start, end, admin) =>
-    new Promise((resolve, reject) => {
-      // Setup query
-      let query = `SELECT 
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [start, end, admin],
+            })
+                .then((data) => resolve(data))
+                /* istanbul ignore next */
+                .catch((err) => {
+                    reject(err)
+                })
+        }),
+    maxstateOld: (start, end, admin) =>
+        new Promise((resolve, reject) => {
+            // Setup query
+            let query = `SELECT 
       mf.local_area AS area_id, 
       mf.changed AS last_updated,
       mf.max_state 
@@ -50,19 +50,19 @@ const archive = (config, db) => ({
       ${config.TABLE_LOCAL_AREAS_RW} AS la
     WHERE 
       mf.local_area = la.pkey AND
-      ($3 IS NULL OR la.instance_region_code = $3)`;
+      ($3 IS NULL OR la.instance_region_code = $3)`
 
-      // Execute
-      db.query(query, {
-        type: QueryTypes.SELECT,
-        bind: [start, end, admin],
-      })
-        .then((data) => resolve(data))
-        /* istanbul ignore next */
-        .catch((err) => {
-          reject(err);
-        });
-    }),
-});
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [start, end, admin],
+            })
+                .then((data) => resolve(data))
+                /* istanbul ignore next */
+                .catch((err) => {
+                    reject(err)
+                })
+        }),
+})
 
-module.exports = archive;
+module.exports = archive
