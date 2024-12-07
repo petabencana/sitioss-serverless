@@ -6,18 +6,18 @@ const { QueryTypes } = require('@sequelize/core')
 
 /**
  * Methods to get cities data from database
- * @alias module:src/api/cities/model
+ * @alias module:src/api/regions/model
  * @param {Object} config Server configuration
  * @param {Object} db PG Promise database instance
  * @return {Object} Query methods
  */
-const cities = (config, db) => ({
+const regions = (config, db) => ({
     // A list of all infrastructure matching a given type
     all: () =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT code, name, the_geom
-      FROM cognicity.instance_regions`
+            let query = `SELECT id , region, region_code, city , ST_AsBinary(the_geom)
+      FROM ${config.TABLE_REGIONS}`
 
             // Execute
 
@@ -25,10 +25,7 @@ const cities = (config, db) => ({
                 type: QueryTypes.SELECT,
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 28 ~ .then ~ data',
-                        data
-                    )
+                    console.log('data coming', data)
                     resolve(data)
                 })
                 /* istanbul ignore next */
@@ -41,9 +38,9 @@ const cities = (config, db) => ({
     byID: (admin) =>
         new Promise((resolve, reject) => {
             // Setup query
-            let query = `SELECT code, name, the_geom
-      FROM cognicity.instance_regions
-      where code=$1 `
+            let query = `SELECT id , region, region_code, city , ST_AsBinary(the_geom)
+      FROM ${config.TABLE_REGIONS}
+      where gid=$1 `
 
             // Execute
             db.query(query, {
@@ -51,10 +48,27 @@ const cities = (config, db) => ({
                 bind: [admin],
             })
                 .then((data) => {
-                    console.log(
-                        '🚀 ~ file: model.js ~ line 50 ~ .then ~ data',
-                        data
-                    )
+                    resolve(data)
+                })
+                /* istanbul ignore next */
+                .catch((err) => {
+                    /* istanbul ignore next */
+                    reject(err)
+                })
+        }),
+
+    byRegionCode: (regionCode) =>
+        new Promise((resolve, reject) => {
+            // Setup query
+            let query = `SELECT id , region, region_code, city
+      FROM ${config.TABLE_REGIONS} WHERE region_code=$1`
+
+            // Execute
+            db.query(query, {
+                type: QueryTypes.SELECT,
+                bind: [regionCode],
+            })
+                .then((data) => {
                     resolve(data)
                 })
                 /* istanbul ignore next */
@@ -65,4 +79,4 @@ const cities = (config, db) => ({
         }),
 })
 
-module.exports = cities
+module.exports = regions

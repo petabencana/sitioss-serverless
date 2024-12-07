@@ -6,11 +6,11 @@ package:
     include:
         - node_modules/**
         - utils/**
-        - floods/**
+        - regions/**
 
 functions:
-    floods:
-        handler: floods/floods-main.main
+    regions:
+        handler: regions/regions-main.main
         name: ${self:service}-${opt:stage}
         # Comment out the below line incase of running it in local
         environment: ${file(./${opt:stage}.env.yml):env}

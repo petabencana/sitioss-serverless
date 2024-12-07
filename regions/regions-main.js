@@ -1,43 +1,50 @@
 ;('use strict')
 /**
  * CogniCity Server /floods endpoint
- * @module feeds/index
+ * @module regions/index
  **/
-const feeds = require('./model')
+const regions = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
 
+const {
+    cacheResponse,
+    handleGeoResponse,
+    handleGeoCapResponse,
+} = require('../utils/utils')
+
+const Cap = require('../utils/cap')
+
 /**
  * Methods to get  reports from database
- * @alias module:src/api/feeds/index
+ * @alias module:src/api/cities/index
  * @param {Object} config Server configuration
  * @param {Object} db sequilize database instance
  */
+
+const cap = new Cap(config) // Setup our cap formatter
 
 app.use((req, res, next) => {
     res.cors()
     next()
 })
 
-app.post('feeds/qlue', (req, res) =>
-    feeds(config, db)
-        .addQlueReport(req.body)
-        .then((data) => res.json(data))
+app.get('regions', cacheResponse('1 day'), (req, res) => {
+    return regions(config, db)
+        .all()
+        .then((data) => handleGeoCapResponse(data, req, res, cap))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+            console.log('🚀 ~ file: index.js ~ line 26 ~ err', err)
         })
-)
+})
 
-// Create a new detik record in the database
-// TODO: What is mandatory around title / text, any rules AND/OR?
-// TODO: Bulk endpoint for multiple POSTs
-app.post('feeds/detik', (req, res) =>
-    feeds(config, db)
-        .addDetikReport(req.body)
-        .then((data) => res.json(data))
+app.get('regions/bounds', cacheResponse('1 day'), (req, res) =>
+    regions(config, db)
+        .byID(req.query.admin)
+        .then((data) => handleGeoResponse(data, req, res))
         .catch((err) => {
-            console.log('🚀 ~ file: index.js ~ line 41 ~ err', err)
+            console.log('🚀 ~ file: index.js ~ line 39 ~ err', err)
         })
 )
 

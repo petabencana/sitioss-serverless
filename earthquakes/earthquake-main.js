@@ -7,7 +7,7 @@ const earthquakes = require('./model')
 const config = require('../config')
 const db = require('../utils/db')
 const app = require('lambda-api')()
-const Cap = require("../utils/cap");
+const Cap = require('../utils/cap')
 
 const { cacheResponse, handleGeoCapResponse } = require('../utils/utils')
 
@@ -18,48 +18,48 @@ const { cacheResponse, handleGeoCapResponse } = require('../utils/utils')
  * @param {Object} db sequilize database instance
  */
 
- const cap = new Cap(config); // Setup our cap formatter
+const cap = new Cap(config) // Setup our cap formatter
 
 app.use((req, res, next) => {
-	res.cors()
-	next()
+    res.cors()
+    next()
 })
 
 // Get a list of all flood gauge reports
 app.get('earthquakes', cacheResponse('1 minute'), (req, res, next) =>
-	earthquakes(config, db)
-		.all()
-		.then((data) => handleGeoCapResponse(data, req, res, cap))
+    earthquakes(config, db)
+        .all()
+        .then((data) => handleGeoCapResponse(data, req, res, cap))
 
-		.catch((err) => {
-			console.log('🚀 ~ file: earthquake-main.js ~ line 31 ~ err', err)
-			return res
-				.status(500)
-				.json({ message: 'Could not process request' })
-			/* istanbul ignore next */
-		})
+        .catch((err) => {
+            console.log('🚀 ~ file: earthquake-main.js ~ line 31 ~ err', err)
+            return res
+                .status(500)
+                .json({ message: 'Could not process request' })
+            /* istanbul ignore next */
+        })
 )
 
 //----------------------------------------------------------------------------//
 // Main router handler
 //----------------------------------------------------------------------------//
 module.exports.main = async (event, context, callback) => {
-	await db
-		.authenticate()
-		.then(() => {
-			console.info('INFO - Database connected.')
-		})
-		.catch((err) => {
-			console.error('ERROR - Unable to connect to the database:', err)
-		})
-	// !!!IMPORTANT: Set this flag to false, otherwise the lambda function
-	// won't quit until all DB connections are closed, which is not good
-	// if you want to freeze and reuse these connections
-	context.callbackWaitsForEmptyEventLoop = false
+    await db
+        .authenticate()
+        .then(() => {
+            console.info('INFO - Database connected.')
+        })
+        .catch((err) => {
+            console.error('ERROR - Unable to connect to the database:', err)
+        })
+    // !!!IMPORTANT: Set this flag to false, otherwise the lambda function
+    // won't quit until all DB connections are closed, which is not good
+    // if you want to freeze and reuse these connections
+    context.callbackWaitsForEmptyEventLoop = false
 
-	return await app.run(event, context)
+    return await app.run(event, context)
 
-	// Run the request
+    // Run the request
 
-	// app.run(event, context, callback);
+    // app.run(event, context, callback);
 } // end router handler

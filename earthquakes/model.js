@@ -2,6 +2,7 @@
  * CogniCity Server /floodgauges data model
  * @module src/api/floodgauges/model
  **/
+
 const { QueryTypes } = require("@sequelize/core");
 const { TABLE_EARTHQUAKE_REPORTS } = require("../config");
 
@@ -43,4 +44,4 @@ const earthquakes = (config, db, logger) => ({
         })
 });
 
-module.exports = earthquakes;
+module.exports = earthquakes
