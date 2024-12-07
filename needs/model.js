@@ -372,20 +372,24 @@ const needs = (config, db) => ({
                 'message-expired': "AND DATE(updated_at) = (CURRENT_DATE - INTERVAL '3 day') AND status = 'IN EXPIRY'",
             }
             const query = `SELECT 
-        ARRAY_AGG(DISTINCT nr.id) AS need_id,
-        ARRAY_AGG(DISTINCT na.user_id) AS need_user_id,
-        ARRAY_AGG(DISTINCT na.need_language) AS need_language
-    FROM 
-        ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} na
-    LEFT JOIN 
-        ${config.TABLE_LOGISTICS_NEEDS} nr ON nr.id = na.need_id
-    WHERE 
-        NOT EXISTS (
-            SELECT 1 
-            FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} gd
-            WHERE gd.need_id = nr.id
-        )
-        ${WhereClauseMap[params.interval]};`
+                ARRAY_AGG(DISTINCT nr.id) AS need_id,
+                ARRAY_AGG(DISTINCT na.user_id) AS need_user_id,
+                ARRAY_AGG(DISTINCT na.need_language) AS need_language
+            FROM 
+                ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} na
+            LEFT JOIN 
+                ${config.TABLE_LOGISTICS_NEEDS} nr ON nr.id = na.need_id
+            WHERE 
+                ${
+                    params.interval === 'stale'
+                        ? `NOT EXISTS (
+                    SELECT 1 
+                    FROM ${config.TABLE_LOGISTICS_GIVER_DETAILS} gd
+                    WHERE gd.need_id = nr.id
+                )`
+                        : 'TRUE'
+                }
+                ${WhereClauseMap[params.interval]};`
 
             db.query(query, {
                 type: QueryTypes.SELECT,
