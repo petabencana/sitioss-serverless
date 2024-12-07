@@ -38,6 +38,7 @@ const config = {
     IMAGES_HOST: process.env.IMAGES_HOST || 'images.petabencana.id',
     API_REPORTS_LIMIT: process.env.API_REPORTS_LIMIT,
     API_FLOODGAUGE_REPORTS_TIME_WINDOW: process.env.API_FLOODGAUGE_REPORTS_TIME_WINDOW || 43200,
+    API_EQ_REPORTS_TIME_WINDOW: process.env.API_EQ_REPORTS_TIME_WINDOW ||  10800, // 3 hr
     API_FLOODGAUGE_REPORTS_LIMIT: process.env.API_FLOODGAUGE_REPORTS_LIMIT,
     NOTIFY_API_KEY: process.env.NOTIFY_API_KEY || '',
     NOTIFY_ENDPOINT: process.env.NOTIFY_ENDPOINT || 'api.petabencana.id/notify',
@@ -63,7 +64,7 @@ const config = {
     TABLE_REPORTS_POINTS_LOG: process.env.TABLE_REPORTS_LOG || 'cognicity.reports_points_log',
     TABLE_COGNICITY_PARTNERS: process.env.TABLE_COGNICITY_PARTNERS || 'cognicity.partners',
     TABLE_FLOODGAUGE_REPORTS: process.env.TABLE_FLOODGAUGE_REPORTS || 'floodgauge.reports',
-    TABLE_EARTHQUAKE_REPORTS: process.env.TABLE_EARTHQUAKE_REPORTS || 'public.earthquakes_reports',
+    TABLE_EARTHQUAKE_REPORTS: process.env.TABLE_EARTHQUAKE_REPORTS || 'earthquake.earthquakes_reports',
     TABLE_VOLCANO_LIST_REPORTS: process.env.TABLE_VOLCANO_LIST_REPORTS || 'volcano.list_volcano',
     TABLE_VOLCANO_LAST_ERUPTION_REPORTS: process.env.TABLE_VOLCANO_LAST_ERUPTION_REPORTS || 'volcano.lastest_eruption',
     TABLE_SUBSCRIPTIONS: process.env.TABLE_SUBSCRIPTIONS || 'subscriptions.subscriptions_table',
@@ -74,5 +75,6 @@ const config = {
     TABLE_LOGISTICS_NEED_ASSOCIATIONS: process.env.TABLE_LOGISTICS_NEED_ASSOCIATIONS || 'logistics.need_user_associations',
     TABLE_LOGISTICS_GIVER_DETAILS: process.env.TABLE_LOGISTICS_GIVER_DETAILS || 'logistics.giver_details',
 }
+
 
 module.exports = config
