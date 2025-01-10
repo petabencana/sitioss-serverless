@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 // Get a list of all needs in geo response
 app.get('needs/', (req, res) =>
     needs(config, db)
-        .all()
+        .all(req.query.is_training)
         .then((data) => {
             // To map requested items against requested quantities
             const formattedData = data.map((entry) => {
