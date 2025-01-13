@@ -36,6 +36,7 @@ const needs = (config, db) => ({
 			${config.TABLE_LOGISTICS_GIVER_DETAILS} gd ON gd.need_id = nr.id
         WHERE nr.status NOT IN ('EXPIRED', 'SATISFIED')
         AND($1:: boolean IS NULL OR nr.is_training = $1)
+        AND (nr.is_training = true AND nr.created_date > now() - INTERVAL '1 hour')
 		GROUP BY 
         nr.need_request_id, nr.status, nr.created_date , ST_AsBinary(nr.the_geom), nr.is_training
 		ORDER BY nr.created_date DESC;`
@@ -458,6 +459,25 @@ const needs = (config, db) => ({
             db.query(query, {
                 type: QueryTypes.DELETE,
                 bind: [needId],
+            })
+                .then((data) => {
+                    resolve(data)
+                })
+                .catch((err) => {
+                    console.log('error here', err)
+                    reject(err)
+                })
+        })
+    },
+
+    deleteNeedDetails: () => {
+        return new Promise((resolve, reject) => {
+            const query = `DELETE FROM ${config.TABLE_LOGISTICS_NEEDS}
+            WHERE is_training = true
+            AND created_date <= NOW() - INTERVAL '1 hour';`
+
+            db.query(query, {
+                type: QueryTypes.DELETE,
             })
                 .then((data) => {
                     resolve(data)

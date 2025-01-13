@@ -138,9 +138,11 @@ app.post('needs/create-need', (req, res) =>
             console.log('req.body', req.body)
             const userId = req.body[0].user_id
             const needLanguage = req.body[0]?.need_language
+            const isTraining = req.body[0]?.is_training
             body.userId = userId
             body.notifyType = 'need-submitted'
             body.language = needLanguage
+            body.is_training = isTraining //added training in the body for training report 
             return invokeNotify(body)
                 .then(() => {
                     return res.status(200).json({ message: 'Need requested' })
@@ -209,6 +211,21 @@ app.delete('needs/giver-details/:id', (req, res) =>
             return res.status(400).json({ error: `Error deleting data ${err}` })
             /* istanbul ignore next */
         })
+)
+
+app.delete('needs/need-details', (req,res) => 
+    needs(config, db)
+    .deleteNeedDetails()
+    .then(async (data) => {
+        console.log('🚀 ~ .then ~ data:', data)
+        // Send Notification
+        return res.status(200).json({ message: 'Delete training Need Records successfully' })
+    })
+    .catch((err) => {
+        console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+        return res.status(400).json({ error: `Error deleting training need data ${err}` })
+        /* istanbul ignore next */
+    })
 )
 
 function invokeNotify(body) {
