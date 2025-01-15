@@ -132,7 +132,7 @@ const needs = (config, db) => ({
                 )
                 needPlaceholders.push(
                     `($${index}, $${index + 1}, $${index + 2}, $${index + 3}, $${index + 4}, $${index + 5}, 
-                    COALESCE($${index + 6},null), $${index + 7},ST_SetSRID(ST_Point($${index + 8}, $${index + 9}), 4326, $${index + 10}))`
+                    COALESCE($${index + 6},null), $${index + 7},ST_SetSRID(ST_Point($${index + 8}, $${index + 9}), 4326), $${index + 10})`
                 )
                 index += 11 // increment index by 11 for each report object
             }
