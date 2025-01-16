@@ -35,8 +35,13 @@ const needs = (config, db) => ({
 		LEFT JOIN 
 			${config.TABLE_LOGISTICS_GIVER_DETAILS} gd ON gd.need_id = nr.id
         WHERE nr.status NOT IN ('EXPIRED', 'SATISFIED')
-        AND($1:: boolean IS NULL OR nr.is_training = $1)
-        AND (nr.is_training = true AND nr.created_date > now() - INTERVAL '1 hour')
+        AND (
+            ($1::boolean IS NULL OR nr.is_training = $1)
+            AND (
+                (nr.is_training = true AND ($1 = true OR $1 IS NULL) AND nr.created_date > now() - INTERVAL '1 hour')
+                OR (nr.is_training = false AND ($1 = false OR $1 IS NULL))
+            )
+        )
 		GROUP BY 
         nr.need_request_id, nr.status, nr.created_date , ST_AsBinary(nr.the_geom), nr.is_training
 		ORDER BY nr.created_date DESC;`
