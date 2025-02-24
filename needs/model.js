@@ -16,10 +16,12 @@ const { TABLE_COGNICITY_PARTNERS, TABLE_LOGISTICS_GIVER_DETAILS } = require('../
 
 const needs = (config, db) => ({
     // A list of all infrastructure matching a given type
-    all: (is_training) =>
+    all: (training, admin, timeperiod) =>
         new Promise((resolve, reject) => {
+            const needTimeWIndow = timeperiod ? Math.floor(Date.now() / 1000) - (timeperiod) : 0;
+            const timeWindow = timeperiod
             // Setup query
-            const query = `SELECT 
+            let query = `SELECT 
 			nr.need_request_id,
 			nr.status,
 			nr.created_date,
@@ -29,28 +31,32 @@ const needs = (config, db) => ({
 			ARRAY_AGG(nr.description) AS all_descriptions,
 			ARRAY_AGG(DISTINCT nr.item_id) AS all_item_ids,
 			COALESCE(SUM(CAST(gd.quantity_satisfied AS integer)), 0) AS total_quantity_satisfied,
-            nr.is_training
+            nr.is_training,
+            nr.tags
 		FROM 
 			${config.TABLE_LOGISTICS_NEEDS} nr
 		LEFT JOIN 
 			${config.TABLE_LOGISTICS_GIVER_DETAILS} gd ON gd.need_id = nr.id
-        WHERE nr.status NOT IN ('EXPIRED', 'SATISFIED')
-        AND (
+        WHERE (
             ($1::boolean IS NULL OR nr.is_training = $1)
             AND (
-                (nr.is_training = true AND ($1 = true OR $1 IS NULL) AND nr.created_date > now() - INTERVAL '1 hour')
+                (nr.is_training = true AND ($1 = true OR $1 IS NULL) AND nr.created_date > now() - INTERVAL '3 hour')
                 OR (nr.is_training = false AND ($1 = false OR $1 IS NULL))
             )
         )
+        AND ($2::text IS NULL OR tags->>'instance_region_code'=$2::text)
+        AND ($3 = 0 OR nr.created_date >= to_timestamp($3)) 
+        AND ${timeWindow ? '1=1' : `nr.status NOT IN ('EXPIRED', 'SATISFIED)`}
 		GROUP BY 
-        nr.need_request_id, nr.status, nr.created_date , ST_AsBinary(nr.the_geom), nr.is_training
+        nr.need_request_id, nr.status, nr.created_date , ST_AsBinary(nr.the_geom), nr.is_training, nr.tags
 		ORDER BY nr.created_date DESC;`
 
-            const isTraining = is_training?.toString() ? is_training : null
+            const isTraining = training?.toString() ? training : null
+            const adminType = admin || null
             // Execute
             db.query(query, {
                 type: QueryTypes.SELECT,
-                bind: [isTraining],
+                bind: [isTraining, adminType, needTimeWIndow],
             })
                 .then((data) => {
                     resolve(data)
@@ -74,7 +80,8 @@ const needs = (config, db) => ({
 			ST_X(nd.the_geom) AS longitude,
 			ST_Y(nd.the_geom) AS latitude,
 			COALESCE(SUM(CAST(gd.quantity_satisfied AS integer)), 0) AS total_quantity_satisfied,
-            nd.is_training
+            nd.is_training,
+            nd.tags
 		FROM 
 			${config.TABLE_LOGISTICS_NEEDS} nd
 		LEFT JOIN 
@@ -90,7 +97,8 @@ const needs = (config, db) => ({
 			nd.quantity_requested,
 			ST_X(nd.the_geom),
 			ST_Y(nd.the_geom),
-            nd.is_training;
+            nd.is_training,
+            nd.tags;
 		`
             const needRequestId = value?.requestId || null
 
@@ -112,7 +120,7 @@ const needs = (config, db) => ({
     addNewNeedReport: (reports) => {
         // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
-            let queryForNeedReports = `INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} ("status", "quantity_requested", "item_requested", "need_language", "units", "item_id", "description", "need_request_id",  "the_geom", "is_training")
+            let queryForNeedReports = `INSERT INTO ${config.TABLE_LOGISTICS_NEEDS} ("status", "quantity_requested", "item_requested", "need_language", "units", "item_id", "description", "need_request_id",  "the_geom", "is_training", "address")
 				VALUES `
 
             const needValues = []
@@ -133,13 +141,14 @@ const needs = (config, db) => ({
                     report.need_request_id,
                     report.lng,
                     report.lat,
-                    report.is_training
+                    report.is_training,
+                    report.address
                 )
                 needPlaceholders.push(
                     `($${index}, $${index + 1}, $${index + 2}, $${index + 3}, $${index + 4}, $${index + 5}, 
-                    COALESCE($${index + 6},null), $${index + 7},ST_SetSRID(ST_Point($${index + 8}, $${index + 9}), 4326), $${index + 10})`
+                    COALESCE($${index + 6},null), $${index + 7},ST_SetSRID(ST_Point($${index + 8}, $${index + 9}), 4326), $${index + 10}, $${index + 11})`
                 )
-                index += 11 // increment index by 11 for each report object
+                index += 12 // increment index by 11 for each report object
             }
 
             queryForNeedReports += `${needPlaceholders.join(', ')} RETURNING id, need_language`
@@ -475,14 +484,43 @@ const needs = (config, db) => ({
         })
     },
 
-    deleteNeedDetails: () => {
+    deleteNeedById: (needId) => {
         return new Promise((resolve, reject) => {
-            const query = `DELETE FROM ${config.TABLE_LOGISTICS_NEEDS}
+            const deleteAssociationsQuery = `
+            DELETE FROM ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS}
+            WHERE need_id IN (
+                SELECT id FROM ${config.TABLE_LOGISTICS_NEEDS} 
+                WHERE need_request_id::TEXT = $1
+            )`;
+         db.query(deleteAssociationsQuery, {
+            type: QueryTypes.DELETE,
+            bind: [needId],
+        })
+        .then(() => {
+            return db.query(`DELETE FROM ${config.TABLE_LOGISTICS_NEEDS} WHERE need_request_id::TEXT = $1`, {
+                type: QueryTypes.DELETE,
+                bind: [needId],
+            });
+        })
+        .then(() => {
+            resolve({ message: 'Records deleted need successfully' });
+        })
+        .catch((err) => {
+            console.log('Error in deleting need by id:', err);
+            reject(err);
+        });
+        })
+    },
+
+    UpdateTrainingNeed: () => {
+        return new Promise((resolve, reject) => {
+            const query = `UPDATE ${config.TABLE_LOGISTICS_NEEDS}
+            SET status = 'EXPIRED'
             WHERE is_training = true
-            AND created_date <= NOW() - INTERVAL '1 hour';`
+            AND created_date <= NOW() - INTERVAL '3 hour';`
 
             db.query(query, {
-                type: QueryTypes.DELETE,
+                type: QueryTypes.UPDATE,
             })
                 .then((data) => {
                     resolve(data)
@@ -491,6 +529,22 @@ const needs = (config, db) => ({
                     console.log('error here', err)
                     reject(err)
                 })
+        })
+    },
+
+    getTags: (body) => {
+        return new Promise(async (resolve, reject) => {
+            try{
+                let query = `SELECT tags FROM ${config.TABLE_LOGISTICS_NEEDS} WHERE need_request_id = $1`
+                const result = await db.query(query, {
+                    type: QueryTypes.SELECT,
+                    bind: [body], 
+                })
+                resolve(result)
+            }
+            catch (error) {
+            reject(error)
+        }
         })
     },
 })

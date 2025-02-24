@@ -13,6 +13,7 @@ AWS.config.region = config.AWS_REGION
 const lambda = new AWS.Lambda()
 
 const { handleGeoResponse } = require('../utils/utils')
+const Cap = require('../utils/cap')
 
 /**
  * Methods to get need reports from database
@@ -20,6 +21,8 @@ const { handleGeoResponse } = require('../utils/utils')
  * @param {Object} config Server configuration
  * @param {Object} db sequilize database instance
  */
+
+const cap = new Cap(config)
 
 app.use((req, res, next) => {
     res.cors()
@@ -29,8 +32,13 @@ app.use((req, res, next) => {
 // Get a list of all needs in geo response
 app.get('needs/', (req, res) =>
     needs(config, db)
-        .all(req.query.is_training)
+        .all(req.query.training, req.query.admin, req.query.timeperiod)
         .then((data) => {
+            if(req.query.timeperiod > 2592000) {
+                return res
+                .status(400)
+                .json({ status: 400, message: 'Time period should be less than our equal to 2592000 (30 days)' })
+            }
             // To map requested items against requested quantities
             const formattedData = data.map((entry) => {
                 const itemsRequested = []
@@ -47,7 +55,7 @@ app.get('needs/', (req, res) =>
                 delete entry.all_descriptions
                 return entry
             })
-            return handleGeoResponse(formattedData, req, res)
+            return handleGeoResponse(formattedData, req, res, cap)
         })
         .catch((err) => {
             console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
@@ -133,9 +141,11 @@ app.patch('needs/giver-details/:id', (req, res) =>
 app.post('needs/create-need', (req, res) =>
     needs(config, db)
         .addNewNeedReport(req.body)
-        .then((data) => {
+        .then(async (data) => {
             const body = {}
-            console.log('req.body', req.body)
+            const needId = req.body[0].need_request_id
+            const tags = await getTagsFromReport(needId)
+            const region = tags[0].tags.instance_region_code 
             const userId = req.body[0].user_id
             const needLanguage = req.body[0]?.need_language
             const isTraining = req.body[0]?.is_training
@@ -143,6 +153,7 @@ app.post('needs/create-need', (req, res) =>
             body.notifyType = 'need-submitted'
             body.language = needLanguage
             body.is_training = isTraining //added training in the body for training report 
+            body.instance_region_code = region //add region code in the body
             return invokeNotify(body)
                 .then(() => {
                     return res.status(200).json({ message: 'Need requested' })
@@ -213,9 +224,22 @@ app.delete('needs/giver-details/:id', (req, res) =>
         })
 )
 
-app.delete('needs/need-details', (req,res) => 
+app.delete('needs/need-details/:id', (req, res) => 
     needs(config, db)
-    .deleteNeedDetails()
+    .deleteNeedById(req.params.id)
+    .then(async (data) => {
+        console.log('🚀 ~ .then ~ data:', data)
+        return res.status(200).json({ message: 'Deleted need Records successfully' })
+    })
+    .catch((err) => {
+        console.log('🚀 ~ file: index.js ~ line 29 ~ err', err)
+        return res.status(400).json({ error: `Error deleting need data ${err}` })
+    })
+)
+
+app.patch('needs/need-details', (req,res) => 
+    needs(config, db)
+    .UpdateTrainingNeed()
     .then(async (data) => {
         console.log('🚀 ~ .then ~ data:', data)
         // Send Notification
@@ -227,6 +251,16 @@ app.delete('needs/need-details', (req,res) =>
         /* istanbul ignore next */
     })
 )
+
+function getTagsFromReport(id) {
+    return needs(config, db)
+    .getTags(id)
+    .then((data) => data) 
+    .catch(err => {
+        console.log('Error in getting tags', err)
+        throw err 
+    })
+}
 
 function invokeNotify(body) {
     return new Promise((resolve, reject) => {
