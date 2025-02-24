@@ -46,7 +46,7 @@ const needs = (config, db) => ({
         )
         AND ($2::text IS NULL OR tags->>'instance_region_code'=$2::text)
         AND ($3 = 0 OR nr.created_date >= to_timestamp($3)) 
-        AND ${timeWindow ? '1=1' : `nr.status NOT IN ('EXPIRED')`}
+        AND ${timeWindow ? '1=1' : `nr.status NOT IN ('EXPIRED', 'SATISFIED)`}
 		GROUP BY 
         nr.need_request_id, nr.status, nr.created_date , ST_AsBinary(nr.the_geom), nr.is_training, nr.tags
 		ORDER BY nr.created_date DESC;`
