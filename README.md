@@ -1,10 +1,10 @@
-# cognicity-serverless
+# sitioss-serverless
 
-API Server for CogniCity
+API Server for Siti OSS
 
 ### Summary
 
-This is the NodeJS serverless function which is deployed uses lambda and AWS API Gateway to route the requests , which runs the CogniCity Data API used by Urban Risk Map instances, such as [PetaBencana.id](https://petabencana.id) site.
+This is the NodeJS serverless function which is deployed uses lambda and AWS API Gateway to route the requests , which runs the Siti OSS Data API used by Disaster Map instances, such as [PetaBencana.id](https://petabencana.id) site.
 
 ### Run
 
