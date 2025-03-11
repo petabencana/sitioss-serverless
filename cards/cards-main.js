@@ -139,6 +139,7 @@ app.put('cards/:cardId', (req, res) => {
               ' card '${req.params.cardId}'`,
                     })
                 }
+                req.body.image_url = req.body.image_url === '' ? null : `https://${config.IMAGES_HOST}/${req.body.image_url}.jpg`
                 return createReport(card, req, res)
             })
     } catch (err) {

@@ -183,9 +183,9 @@ const cards = (config, db) => ({
                 {
                     query: `INSERT INTO ${config.TABLE_GRASP_REPORTS}
               (card_id, card_data, text, created_at, disaster_type,is_training,
-                partner_code, status,
+                partner_code, status,image_url,
                 the_geom)
-              VALUES (?, ? , COALESCE(?,null),? , COALESCE(?,null), COALESCE(?,null), COALESCE(?,null),  ?,
+              VALUES (?, ? , COALESCE(?,null),? , COALESCE(?,null), COALESCE(?,null), COALESCE(?,null),  ?, COALESCE(?,null),
               ST_SetSRID(ST_Point(?,?),4326))`,
                     type: QueryTypes.INSERT,
                     replacements: [
@@ -197,6 +197,7 @@ const cards = (config, db) => ({
                         body.is_training || false,
                         partnerCode,
                         'Confirmed',
+                        body.image_url,
                         body.location.lng,
                         body.location.lat,
                     ],
