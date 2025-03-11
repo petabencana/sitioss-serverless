@@ -185,7 +185,7 @@ const cards = (config, db) => ({
               (card_id, card_data, text, created_at, disaster_type,is_training,
                 partner_code, status,image_url,
                 the_geom)
-              VALUES (?, ? , COALESCE(?,null),? , COALESCE(?,null), COALESCE(?,null), COALESCE(?,null),  ?,
+              VALUES (?, ? , COALESCE(?,null),? , COALESCE(?,null), COALESCE(?,null), COALESCE(?,null),  ?, COALESCE(?,null),
               ST_SetSRID(ST_Point(?,?),4326))`,
                     type: QueryTypes.INSERT,
                     replacements: [
