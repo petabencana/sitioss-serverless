@@ -177,6 +177,7 @@ app.post('needs/update-giver', (req, res) =>
             const fetchByNeedId = await needs(config, db).queryUserIdByNeedId(req.body[0]?.need_id)
             const userId = fetchByNeedId[0]?.user_id
             const needLanguage = fetchByNeedId[0]?.need_language
+            const needAddress = fetchByNeedId[0]?.address
             const PayloadMap = {
                 'donor-committed-need': {
                     userId,
@@ -190,6 +191,7 @@ app.post('needs/update-giver', (req, res) =>
                     notifyType: 'donor-committed-giver',
                     itemsPromised: req.body.map((item) => item.item_satisfied).join(','),
                     promisedDate: `${req.body[0].promised_date} , ${req.body[0].promised_time}`,
+                    address: needAddress,
                     language: req.body[0].giver_language,
                 },
             }
