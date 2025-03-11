@@ -320,7 +320,7 @@ const needs = (config, db) => ({
 
     queryUserIdByNeedId: (id) => {
         return new Promise((resolve, reject) => {
-            const query = `SELECT * FROM ${config.TABLE_LOGISTICS_NEED_ASSOCIATIONS} WHERE need_id=$1;`
+            const query = `SELECT * FROM ${config.TABLE_LOGISTICS_NEEDS} WHERE id=$1;`
             db.query(query, {
                 type: QueryTypes.SELECT,
                 bind: [id],
